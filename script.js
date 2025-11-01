@@ -50,93 +50,78 @@ const resultCharacter = document.getElementById('resultCharacter');
 const resultTitle = document.getElementById('resultTitle');
 const choiceButtons = document.querySelectorAll('.choice-button');
 
-// 音声読み上げ機能
-function speak(text) {
+// 音声読み上げ機能（コールバック機能付き）
+function speak(text, callback) {
     if ('speechSynthesis' in window) {
+        speechSynthesis.cancel();
+        
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ja-JP';
         utterance.rate = 1.0;
         utterance.pitch = 1.2;
+        
+        // 🎯 喋り終わったら実行
+        utterance.onend = () => {
+            if (callback) {
+                callback();
+            }
+        };
+        
+        // エラー時も実行
+        utterance.onerror = () => {
+            if (callback) {
+                callback();
+            }
+        };
+        
         speechSynthesis.speak(utterance);
-    }
-}
-
-// ゲーム初期化
-function initGame() {
-    currentQuestion = 0;
-    score = 0;
-    isAnswered = false;
-    
-    // 問題をシャッフルして10問選択
-    const shuffled = [...quizData].sort(() => Math.random() - 0.5);
-    gameQuestions = shuffled.slice(0, 10);
-    
-    updateDisplay();
-    showQuestion();
-}
-
-// 表示更新
-function updateDisplay() {
-    questionNum.textContent = currentQuestion + 1;
-    scoreDisplay.textContent = score;
-}
-
-// 問題表示
-function showQuestion() {
-    if (currentQuestion >= gameQuestions.length) {
-        showResult();
-        return;
-    }
-    
-    const question = gameQuestions[currentQuestion];
-    questionText.textContent = question.question;
-    characterFace.textContent = '🤔';
-    characterFace.className = 'character-face';
-    feedback.classList.add('hidden');
-    feedback.className = 'feedback hidden'; // Reset class for transitions
-    gameScreen.className = 'screen'; // Reset background class
-    isAnswered = false;
-    
-    // ボタンを有効化
-    choiceButtons.forEach(button => {
-        button.disabled = false;
-        button.style.opacity = '1';
-    });
-    
-    // 問題を読み上げ
-    speak(question.question + 'は何性でしょう？');
-}
-
-// 回答処理
-function handleAnswer(selectedAnswer) {
-    if (isAnswered) return;
-    
-    isAnswered = true;
-    const correctAnswer = gameQuestions[currentQuestion].answer;
-    const isCorrect = selectedAnswer === correctAnswer;
-    
-    // ボタンを無効化
-    choiceButtons.forEach(button => {
-        button.disabled = true;
-        button.style.opacity = '0.6';
-    });
-    
-    if (isCorrect) {
-        score++;
-        showCorrectFeedback();
     } else {
-        showIncorrectFeedback(correctAnswer);
+        // 音声が使えない環境
+        if (callback) {
+            setTimeout(callback, 500);
+        }
     }
+}
+
+// 正解フィードバック
+function showCorrectFeedback() {
+    characterFace.textContent = '😊';
+    characterFace.className = 'character-face correct';
     
-    updateDisplay();
+    feedback.className = 'feedback correct';
+    const explanation = gameQuestions[currentQuestion].explanation;
+    feedbackText.innerHTML = `🎉 正解！すごいね！<br><span class="explanation">${explanation}</span>`;
+    feedback.classList.remove('hidden');
     
-    // 2.5秒後に次の問題へ
-    setTimeout(() => {
+    gameScreen.className = 'screen correct-bg';
+    
+    // 🎯 読み上げ完了時に次の問題に進む
+    const readText = `正解！すごいね！${explanation}`;
+    speak(readText, () => {
         currentQuestion++;
         showQuestion();
-    }, 2500); // 2.5秒に変更
+    });
 }
 
+// 不正解フィードバック
+function showIncorrectFeedback(correctAnswer) {
+    characterFace.textContent = '😅';
+    characterFace.className = 'character-face incorrect';
+    
+    feedback.className = 'feedback incorrect';
+    const explanation = gameQuestions[currentQuestion].explanation;
+    feedbackText.innerHTML = `😔 残念！正解は「${correctAnswer}」だよ<br><span class="explanation">${explanation}</span>`;
+    feedback.classList.remove('hidden');
+    
+    gameScreen.className = 'screen incorrect-bg';
+    
+    // 🎯 読み上げ完了時に次の問題に進む
+    const readText = `残念！正解は${correctAnswer}だよ。${explanation}`;
+    speak(readText, () => {
+        currentQuestion++;
+        showQuestion();
+    });
+}
 // 正解フィードバック
 function showCorrectFeedback() {
     characterFace.textContent = '😊';
