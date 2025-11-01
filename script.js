@@ -23,37 +23,13 @@ const quizData = [
     { question: "トマトジュース", answer: "酸性", explanation: "トマトにはクエン酸やリンゴ酸などが含まれており、トマトジュースは酸性を示します。pH値は4〜5程度です。" },
     { question: "漂白剤", answer: "アルカリ性", explanation: "家庭用の多くの漂白剤は、次亜塩素酸ナトリウムなどのアルカリ性物質を含み、強いアルカリ性を示します。取り扱いには注意が必要です。" },
     { question: "緑茶", answer: "酸性", explanation: "緑茶にはカテキンやカフェインなどが含まれており、わずかに酸性（pH 6程度）を示します。" },
-    { question: "ベーキングパウダー水", answer: "アルカリ性", explanation: "ベーキングパウダーは重曹と酸性剤の混合物ですが、水に溶かすと重曹の作用で弱アルカリ性を示します。" }
-　　 { question: "ヨーグルト", answer: "酸性", explanation: "ヨーグルトは乳酸菌の働きで乳糖が分解され、乳酸が生成されるため酸性です。pHは4〜5程度です。" },
+    { question: "ベーキングパウダー水", answer: "アルカリ性", explanation: "ベーキングパウダーは重曹と酸性剤の混合物ですが、水に溶かすと重曹の作用で弱アルカリ性を示します。" },
+    { question: "ヨーグルト", answer: "酸性", explanation: "ヨーグルトは乳酸菌の働きで乳糖が分解され、乳酸が生成されるため酸性です。pHは4〜5程度です。" },
     { question: "シャンプー", answer: "酸性", explanation: "人の髪や頭皮は弱酸性なので、多くのシャンプーも弱酸性に調整されています。pHは5〜6程度です。" },
     { question: "ハンドソープ", answer: "アルカリ性", explanation: "皮脂や汚れを落とすため、ハンドソープは弱アルカリ性に作られています。" },
     { question: "洗濯洗剤", answer: "アルカリ性", explanation: "洗濯洗剤は汚れを分解するためにアルカリ性物質を含み、pH8〜10程度を示します。" },
     { question: "スポーツドリンク", answer: "酸性", explanation: "クエン酸やリンゴ酸を含むため酸性を示します。歯のエナメル質を溶かすことがあるので注意が必要です。" },
-    { question: "炭酸水", answer: "酸性", explanation: "二酸化炭素が溶けて炭酸を生じるため酸性です。pHは約5です。" },
-    { question: "味噌汁", answer: "中性", explanation: "味噌汁のpHは6.8〜7程度でほぼ中性です。具材によって若干変わります。" },
-    { question: "紅茶", answer: "酸性", explanation: "紅茶にはタンニンや有機酸が含まれており、pH5〜6程度の酸性を示します。" },
-    { question: "カルピス", answer: "酸性", explanation: "乳酸発酵によって作られるため、酸性を示します。pHは3〜4程度です。" },
-    { question: "豆乳", answer: "中性", explanation: "豆乳はpH6.8〜7程度とほぼ中性です。ただし、保存状態でわずかに酸性に傾くこともあります。" },
-    { question: "エナジードリンク", answer: "酸性", explanation: "エナジードリンクにはクエン酸や炭酸が含まれ、酸性（pH3〜4）を示します。" },
-    { question: "うがい薬（ポビドンヨード）", answer: "酸性", explanation: "ポビドンヨードは酸性環境で安定するため、酸性に調整されています。" },
-    { question: "胃薬（制酸剤）", answer: "アルカリ性", explanation: "胃酸を中和するため、炭酸水素ナトリウムなどアルカリ性成分が含まれています。" },
-    { question: "歯磨き粉", answer: "アルカリ性", explanation: "虫歯の原因となる酸を中和するため、弱アルカリ性に作られています。" },
-    { question: "オリーブオイル", answer: "中性", explanation: "オリーブオイルはほぼ中性で、pH6〜7程度です。食用油は基本的に中性です。" },
-    { question: "ビール", answer: "酸性", explanation: "ビールは麦芽やホップの影響で酸性を示し、pH4程度です。" },
-    { question: "炭酸飲料水", answer: "酸性", explanation: "二酸化炭素によって炭酸ができ、酸性を示します。pHは約4です。" },
-    { question: "目薬", answer: "中性", explanation: "目の刺激を避けるため、涙に近い中性（pH7.0前後）に調整されています。" },
-    { question: "洗顔料", answer: "酸性", explanation: "肌に優しいように多くの洗顔料は弱酸性（pH5.5前後）に設計されています。" },
-    { question: "重曹ペースト", answer: "アルカリ性", explanation: "重曹を水で練ったペーストは弱アルカリ性です。汚れ落としや脱臭に使われます。" },
-    { question: "トイレ用洗剤", answer: "酸性", explanation: "尿石や水垢を溶かすために酸性洗剤が多く使われます。pHは2〜3程度です。" },
-    { question: "床用クリーナー", answer: "アルカリ性", explanation: "油汚れや皮脂を落とすためにアルカリ性の成分を含んでいます。" },
-    { question: "クエン酸水", answer: "酸性", explanation: "クエン酸を水に溶かすと酸性を示します。水垢落としなどに使われます。" },
-    { question: "漂白剤（酸素系）", answer: "アルカリ性", explanation: "過炭酸ナトリウムを主成分とする酸素系漂白剤はアルカリ性を示します。" },
-    { question: "炭酸バス（入浴剤）", answer: "酸性", explanation: "二酸化炭素を発生させるため、酸性の成分が含まれています。" },
-    { question: "せっけん", answer: "アルカリ性", explanation: "脂肪酸ナトリウムなどのアルカリ性成分を含み、手触りはぬるぬるします。" },
-    { question: "レタス汁", answer: "中性", explanation: "植物細胞液はほぼ中性で、pH6〜7程度です。" },
-    { question: "ココア", answer: "酸性", explanation: "ココアに含まれるポリフェノールや有機酸により、酸性（pH5〜6）を示します。" },
-    { question: "梅干し汁", answer: "酸性", explanation: "梅干しに含まれるクエン酸により、非常に酸性です。pH2〜3程度です。" },
-    { question: "砂糖水", answer: "中性", explanation: "砂糖は中性のため、水に溶かしてもpHはほぼ中性（7前後）のままです。" }
+    { question: "炭酸水", answer: "酸性", explanation: "二酸化炭素が溶けて炭酸を生じるため酸性です。pHは約5です。" }
 ];
 
 // ゲーム状態管理
@@ -152,35 +128,6 @@ function showIncorrectFeedback(correctAnswer) {
         showQuestion();
     });
 }
-// 正解フィードバック
-function showCorrectFeedback() {
-    characterFace.textContent = '😊';
-    characterFace.className = 'character-face correct';
-    
-    feedback.className = 'feedback correct';
-    const explanation = gameQuestions[currentQuestion].explanation; // 解説を取得
-    feedbackText.innerHTML = `🎉 正解！すごいね！<br><span class="explanation">${explanation}</span>`; // 解説を追加
-    feedback.classList.remove('hidden');
-    
-    gameScreen.className = 'screen correct-bg';
-    
-    speak('正解！すごいね！' + explanation); // 音声読み上げにも追加
-}
-
-// 不正解フィードバック
-function showIncorrectFeedback(correctAnswer) {
-    characterFace.textContent = '😅';
-    characterFace.className = 'character-face incorrect';
-    
-    feedback.className = 'feedback incorrect';
-    const explanation = gameQuestions[currentQuestion].explanation; // 解説を取得
-    feedbackText.innerHTML = `😔 残念！正解は「${correctAnswer}」だよ<br><span class="explanation">${explanation}</span>`; // 解説を追加
-    feedback.classList.remove('hidden');
-    
-    gameScreen.className = 'screen incorrect-bg';
-    
-    speak(`残念！正解は${correctAnswer}だよ。${explanation}`); // 音声読み上げにも追加
-}
 
 // 結果表示
 function showResult() {
@@ -222,6 +169,62 @@ function showResult() {
     speak(`${score}問正解！${message}`);
 }
 
+// ゲーム初期化
+function initGame() {
+    currentQuestion = 0;
+    score = 0;
+    isAnswered = false;
+    gameQuestions = quizData.sort(() => Math.random() - 0.5).slice(0, 10);
+    showQuestion();
+}
+
+// 問題を表示
+function showQuestion() {
+    if (currentQuestion >= gameQuestions.length) {
+        showResult();
+        return;
+    }
+
+    isAnswered = false;
+    gameScreen.className = 'screen';
+    feedback.classList.add('hidden');
+    characterFace.textContent = '🤔';
+    characterFace.className = 'character-face';
+
+    const currentQ = gameQuestions[currentQuestion];
+    questionText.textContent = currentQ.question;
+    questionNum.textContent = currentQuestion + 1;
+    scoreDisplay.textContent = score;
+
+    choiceButtons.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    });
+
+    speak(`第${currentQuestion + 1}問。${currentQ.question}は何性でしょう？`);
+}
+
+// 回答処理
+function handleAnswer(answer) {
+    if (isAnswered) return;
+    isAnswered = true;
+
+    const correctAnswer = gameQuestions[currentQuestion].answer;
+    const isCorrect = answer === correctAnswer;
+
+    choiceButtons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+    });
+
+    if (isCorrect) {
+        score++;
+        showCorrectFeedback();
+    } else {
+        showIncorrectFeedback(correctAnswer);
+    }
+}
+
 // 画面切り替え
 function showScreen(screen) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -251,17 +254,12 @@ choiceButtons.forEach(button => {
 // タッチデバイス対応
 choiceButtons.forEach(button => {
     button.addEventListener('touchstart', (e) => {
-        // e.preventDefault() は、クリックイベントの二重発火や、長押しによるコンテキストメニュー表示などを防ぐために使用しますが、
-        // スクロールを阻害する可能性があるので、ここではコメントアウトします。
-        // 代わりに CSS で touch-action: manipulation; を設定して、タップとスクロールの認識を改善します。
-        // e.preventDefault(); 
         if (!isAnswered) {
             const answer = e.target.getAttribute('data-answer');
             handleAnswer(answer);
         }
-    }, { passive: false }); // passive: false を設定
+    }, { passive: false });
 });
-
 
 // ページ読み込み時
 document.addEventListener('DOMContentLoaded', () => {
