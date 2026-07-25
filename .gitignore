@@ -1,7 +1,8 @@
 # 未使用・元音源（公開プレイセットは *.m4a のみ）
 *.mp3
 audio/a
-audio/ishi-moment-long.mp3
+audio/field.m4a
+audio/field.mp3
 images/a
 
 # ローカル残骸

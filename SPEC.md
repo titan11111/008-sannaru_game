@@ -10,17 +10,19 @@
 4. 図鑑タブで確認（**リロードで図鑑は0に戻る**）
 
 ## アセット
-- 画像: `images/mN.webp`（一部。無いIDはSVG）
-- 音: `audio/*.m4a`（field / seikai2 / fuseikai2 / ishi-moment / levelup予備）
-- 3MB鉄則: プレイセット約1.4MB
+- 画像: `images/m1.webp`〜`m30.webp`（全30種・512×512。失敗作のみSVG）
+- 音: `audio/*.m4a`（ishi-moment-long / ishi-moment / maou / seikai2 / fuseikai2 / levelup予備）
+- 不採用: `field.m4a`（コードから参照しない）
+- 3MB鉄則: プレイセット約2.98MB（画像0.66MB＋音声2.27MB＋HTML）
+- デフォルト音量: BGM 0.16 / 失敗 0.18 / 発見 0.22 / SE 0.36
 
 ## 音の対応
 | イベント | 音 |
 |---|---|
-| BGM | field.m4a |
+| 待機・合成中BGM | ishi-moment-long.m4a（同一曲） |
 | 新発見 | ishi-moment.m4a（BGM停止） |
-| 既存成功 | seikai2.m4a |
-| 失敗 | fuseikai2.m4a |
+| 既存成功 | seikai2.m4a → BGM継続/再開 |
+| 失敗（不純） | maou.m4a（BGM停止。モーダル閉じでBGM再開） |
 | 選択/クリア/チャージ | WebAudio短音 |
 
 ## 公開

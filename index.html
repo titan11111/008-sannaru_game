@@ -763,26 +763,53 @@
 
         const MINERAL_IMAGES = {
             m1: 'images/m1.webp',   // ルビー
+            m2: 'images/m2.webp',   // サファイア
             m3: 'images/m3.webp',   // エメラルド
             m4: 'images/m4.webp',   // トパーズ
             m5: 'images/m5.webp',   // アメジスト
             m6: 'images/m6.webp',   // アクアマリン
             m7: 'images/m7.webp',   // ダイヤモンド
             m8: 'images/m8.webp',   // ペリドット
+            m9: 'images/m9.webp',   // ガーネット
             m10: 'images/m10.webp', // オパール
             m11: 'images/m11.webp', // ローズクォーツ
             m12: 'images/m12.webp', // ラピスラズリ
             m13: 'images/m13.webp', // 黒曜石
-            m14: 'images/m14.webp'  // 琥珀
+            m14: 'images/m14.webp', // 琥珀
+            m15: 'images/m15.webp', // パイライト
+            m16: 'images/m16.webp', // ターコイズ
+            m17: 'images/m17.webp', // ムーンストーン
+            m18: 'images/m18.webp', // サンストーン
+            m19: 'images/m19.webp', // モルダバイト
+            m20: 'images/m20.webp', // アレキサンドライト
+            m21: 'images/m21.webp', // フローライト
+            m22: 'images/m22.webp', // スモーキークォーツ
+            m23: 'images/m23.webp', // シトリン
+            m24: 'images/m24.webp', // チャロアイト
+            m25: 'images/m25.webp', // ジェダイト
+            m26: 'images/m26.webp', // ビスマス結晶
+            m27: 'images/m27.webp', // フォスフォフィライト
+            m28: 'images/m28.webp', // タイガーズアイ
+            m29: 'images/m29.webp', // ロードクロサイト
+            m30: 'images/m30.webp'  // 水晶
         };
 
         function getMineralVisual(id, size = 100) {
             const src = MINERAL_IMAGES[id];
             if (src) {
-                return `<img src="${src}" alt="" width="${size}" height="${size}" class="mineral-photo" style="width:${size}px;height:${size}px" loading="lazy" decoding="async">`;
+                // eager: モーダル内の lazy は未表示領域で読み込み失敗することがある
+                // onerror: WebP欠落時はSVGへフォールバック
+                return `<img src="${src}" alt="" width="${size}" height="${size}" class="mineral-photo" style="width:${size}px;height:${size}px" loading="eager" decoding="async" data-mineral-id="${id}" data-mineral-size="${size}" onerror="window.__mineralImgFallback&&window.__mineralImgFallback(this)">`;
             }
             return getMineralSVG(id, size);
         }
+
+        window.__mineralImgFallback = function (img) {
+            const id = img.getAttribute('data-mineral-id');
+            const size = parseInt(img.getAttribute('data-mineral-size') || '100', 10);
+            if (!id || !img.parentNode) return;
+            img.outerHTML = getMineralSVG(id, size);
+        };
 
         function getMineralSVG(id, size = 100) {
             const uid = 'gem_' + id + '_' + Math.floor(Math.random()*10000);
@@ -1555,7 +1582,7 @@
             modal.classList.add('opacity-0', 'pointer-events-none');
             modal.children[1].classList.remove('scale-100');
             modal.children[1].classList.add('scale-95');
-            SoundBus.endDiscoveryTheme();
+            SoundBus.endResultThemes();
             clearAllSlots();
         }
 
@@ -1696,7 +1723,7 @@
 
 
         /* ====================================================================
-           9. サウンド（BGM1本＋SEは種別ごとに1インスタンス＝二重再生防止）
+           9. サウンド（BGM=ishi-moment-long / 発見・失敗テーマ＋SE）
            ==================================================================== */
         const MUTE_KEY = 'gem_alchemist_muted';
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1705,22 +1732,29 @@
             unlocked: false,
             muted: localStorage.getItem(MUTE_KEY) === '1',
             ctx: null,
-            bgm: null,
-            theme: null, // 発見時テーマ（ishi）— BGMと同時再生しない
+            bgm: null,       // 待機・合成共通: ishi-moment-long
+            theme: null,     // 新発見: ishi-moment
+            failTheme: null, // 失敗（不純）: maou
             se: {},
             chargeOsc: null,
             chargeGain: null,
 
             init() {
-                this.bgm = new Audio('audio/field.m4a');
+                // field.m4a は不採用。待機中も合成中も同じBGM
+                this.bgm = new Audio('audio/ishi-moment-long.m4a');
                 this.bgm.loop = true;
                 this.bgm.preload = 'auto';
-                this.bgm.volume = 0.32;
+                this.bgm.volume = 0.16;
 
                 this.theme = new Audio('audio/ishi-moment.m4a');
                 this.theme.loop = false;
                 this.theme.preload = 'none';
-                this.theme.volume = 0.45;
+                this.theme.volume = 0.22;
+
+                this.failTheme = new Audio('audio/maou.m4a');
+                this.failTheme.loop = true;
+                this.failTheme.preload = 'auto';
+                this.failTheme.volume = 0.18;
 
                 this.se = {
                     ok: new Audio('audio/seikai2.m4a'),
@@ -1729,7 +1763,7 @@
                 };
                 Object.values(this.se).forEach((a) => {
                     a.preload = 'auto';
-                    a.volume = 0.72;
+                    a.volume = 0.36;
                 });
                 this.syncMuteUi();
             },
@@ -1785,6 +1819,10 @@
                 }
             },
 
+            isPlaying(a) {
+                return !!(a && !a.paused && a.currentTime > 0);
+            },
+
             stopSeAll() {
                 Object.values(this.se).forEach((a) => {
                     try {
@@ -1799,6 +1837,14 @@
                 try {
                     this.theme.pause();
                     this.theme.currentTime = 0;
+                } catch (e) { /* ignore */ }
+            },
+
+            stopFailTheme() {
+                if (!this.failTheme) return;
+                try {
+                    this.failTheme.pause();
+                    this.failTheme.currentTime = 0;
                 } catch (e) { /* ignore */ }
             },
 
@@ -1817,6 +1863,7 @@
                 this.stopCharge();
                 this.stopSeAll();
                 this.stopTheme();
+                this.stopFailTheme();
                 if (this.bgm) {
                     try {
                         this.bgm.pause();
@@ -1826,8 +1873,8 @@
 
             startBgm() {
                 if (!this.unlocked || this.muted || !this.bgm) return;
-                // テーマ再生中はBGMを重ねない
-                if (this.theme && !this.theme.paused && this.theme.currentTime > 0) return;
+                // 発見・失敗テーマ中はBGMを重ねない
+                if (this.isPlaying(this.theme) || this.isPlaying(this.failTheme)) return;
                 if (!this.bgm.paused) return;
                 this.bgm.play().catch(() => {});
             },
@@ -1849,17 +1896,17 @@
                 } catch (e) { /* ignore */ }
             },
 
-            /** 新発見テーマ：BGM停止→ishiのみ（SEファンファーレと同時にしない） */
+            /** 新発見テーマ：BGM停止→ishi-moment */
             playDiscoveryTheme() {
                 if (!this.unlocked || this.muted) return;
                 this.stopCharge();
                 this.stopSeAll();
+                this.stopFailTheme();
                 this.pauseBgm();
                 this.stopTheme();
                 try {
                     this.theme.currentTime = 0;
                     this.theme.play().catch(() => {
-                        // フォールバック：短いlevelup
                         this.playSe('level');
                         this.startBgm();
                     });
@@ -1869,9 +1916,55 @@
                 }
             },
 
-            endDiscoveryTheme() {
+            /** 失敗テーマ：BGM停止→maou（不純な金属） */
+            playFailTheme() {
+                if (!this.unlocked || this.muted) return;
+                this.stopCharge();
+                this.stopSeAll();
                 this.stopTheme();
+                this.pauseBgm();
+                this.stopFailTheme();
+                try {
+                    this.failTheme.currentTime = 0;
+                    this.failTheme.play().catch(() => {
+                        this.playSe('ng');
+                        this.startBgm();
+                    });
+                } catch (e) {
+                    this.playSe('ng');
+                    this.startBgm();
+                }
+            },
+
+            endResultThemes() {
+                this.stopTheme();
+                this.stopFailTheme();
                 if (!this.muted && this.unlocked) this.startBgm();
+            },
+
+            endDiscoveryTheme() {
+                this.endResultThemes();
+            },
+
+            softPauseAllMusic() {
+                [this.bgm, this.theme, this.failTheme].forEach((a) => {
+                    if (!a) return;
+                    try { a.pause(); } catch (e) { /* ignore */ }
+                });
+                this.stopCharge();
+            },
+
+            softResumeMusic() {
+                if (!this.unlocked || this.muted) return;
+                const resume = (a) => {
+                    if (a && a.paused && a.currentTime > 0.05) {
+                        a.play().catch(() => {});
+                        return true;
+                    }
+                    return false;
+                };
+                if (resume(this.theme) || resume(this.failTheme)) return;
+                this.startBgm();
             },
 
             beep(type) {
@@ -1887,7 +1980,7 @@
                         gain.connect(ctx.destination);
                         osc.frequency.setValueAtTime(520, now);
                         osc.frequency.exponentialRampToValueAtTime(880, now + 0.07);
-                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.setValueAtTime(0.04, now);
                         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
                         osc.start(now);
                         osc.stop(now + 0.08);
@@ -1899,7 +1992,7 @@
                         gain.connect(ctx.destination);
                         osc.frequency.setValueAtTime(280, now);
                         osc.frequency.linearRampToValueAtTime(140, now + 0.09);
-                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.setValueAtTime(0.04, now);
                         gain.gain.linearRampToValueAtTime(0.001, now + 0.09);
                         osc.start(now);
                         osc.stop(now + 0.1);
@@ -1912,8 +2005,8 @@
                         gain.connect(ctx.destination);
                         osc.frequency.setValueAtTime(140, now);
                         osc.frequency.exponentialRampToValueAtTime(720, now + 1.5);
-                        gain.gain.setValueAtTime(0.02, now);
-                        gain.gain.linearRampToValueAtTime(0.1, now + 1.5);
+                        gain.gain.setValueAtTime(0.01, now);
+                        gain.gain.linearRampToValueAtTime(0.05, now + 1.5);
                         osc.start(now);
                         osc.stop(now + 1.55);
                         this.chargeOsc = osc;
@@ -1925,7 +2018,7 @@
                         osc.connect(gain);
                         gain.connect(ctx.destination);
                         osc.frequency.setValueAtTime(160, now);
-                        gain.gain.setValueAtTime(0.05, now);
+                        gain.gain.setValueAtTime(0.025, now);
                         gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
                         osc.start(now);
                         osc.stop(now + 0.12);
@@ -1941,13 +2034,13 @@
                 return;
             }
             if (type === 'fail') {
-                SoundBus.stopCharge();
-                SoundBus.playSe('ng');
+                SoundBus.playFailTheme();
                 return;
             }
             if (type === 'success') {
                 SoundBus.stopCharge();
                 SoundBus.playSe('ok');
+                SoundBus.startBgm();
                 return;
             }
             if (type === 'discovery') {
@@ -2011,10 +2104,9 @@
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                SoundBus.pauseBgm();
-                SoundBus.stopCharge();
-            } else if (SoundBus.unlocked && !SoundBus.muted) {
-                SoundBus.startBgm();
+                SoundBus.softPauseAllMusic();
+            } else {
+                SoundBus.softResumeMusic();
             }
         });
 
