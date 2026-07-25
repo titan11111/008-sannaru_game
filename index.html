@@ -1,65 +1,2023 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>酸アルバトルクイズ</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#070b14">
+    <title>鉱物融合ラボ - Gem Alchemist</title>
+    <meta property="og:title" content="鉱物融合ラボ - Gem Alchemist">
+    <meta property="og:description" content="注入管に元素を入れて鉱物を融合。スマホブラウザで遊べる無料ゲーム。">
+    <meta property="og:url" content="https://titan11111.github.io/008-sannaru_game/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="description" content="注入管に元素を入れて鉱物を融合するブラウザゲーム。">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --safe-t: env(safe-area-inset-top, 0px);
+            --safe-b: env(safe-area-inset-bottom, 0px);
+            --safe-l: env(safe-area-inset-left, 0px);
+            --safe-r: env(safe-area-inset-right, 0px);
+            --lab-cyan: #22d3ee;
+            --lab-amber: #fbbf24;
+            --lab-magenta: #e879f9;
+        }
+        *, *::before, *::after {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #070b14;
+            color: #e2e8f0;
+            user-select: none;
+            -webkit-user-select: none;
+            overscroll-behavior: none;
+            margin: 0;
+            padding: 0;
+        }
+        .font-cinzel { font-family: 'Cinzel', serif; }
+        .scrollable { touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        /* グロー効果アニメーション */
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(34, 211, 238, 0.35)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 28px rgba(232, 121, 249, 0.7)); transform: scale(1.03); }
+        }
+        .glow-animation { animation: pulse-glow 3s infinite ease-in-out; }
+
+        @keyframes ray-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .ray-bg { animation: ray-rotate 20s linear infinite; }
+
+        @keyframes plasma-swirl {
+            0% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg); }
+            50% { transform: rotate(180deg) scale(1.1); filter: hue-rotate(90deg); }
+            100% { transform: rotate(360deg) scale(1); filter: hue-rotate(0deg); }
+        }
+        .plasma-effect {
+            animation: plasma-swirl 8s infinite linear;
+            transform-origin: center;
+        }
+
+        .card-shine { position: relative; overflow: hidden; }
+        .card-shine::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.1) 50%, transparent 55%);
+            transform: rotate(30deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+        }
+        .card-shine:hover::after {
+            opacity: 1;
+            transform: rotate(30deg) translate(20%, 20%);
+        }
+
+        .mineral-photo {
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.35));
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        /* ===== 注入管リアクター ===== */
+        .lab-panel {
+            background:
+                radial-gradient(ellipse at 50% 18%, rgba(34,211,238,0.12), transparent 55%),
+                radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.1), transparent 50%),
+                linear-gradient(180deg, #0c1220 0%, #080c16 100%);
+            border: 1px solid rgba(51, 65, 85, 0.9);
+            box-shadow: inset 0 1px 0 rgba(148,163,184,0.08), 0 20px 50px rgba(0,0,0,0.35);
+        }
+        .injector-row {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto 4px;
+            position: relative;
+            z-index: 20;
+        }
+        .injector {
+            flex: 1;
+            min-width: 0;
+            min-height: 112px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 6px;
+            padding: 10px 6px 8px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(100, 116, 139, 0.55);
+            background: rgba(15, 23, 42, 0.85);
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+            transition: none;
+        }
+        .injector.filled {
+            border-color: rgba(34, 211, 238, 0.65);
+            background: rgba(8, 47, 73, 0.55);
+        }
+        .injector-label {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0;
+            white-space: nowrap;
+            color: #cbd5e1;
+            line-height: 1.2;
+        }
+        .injector.filled .injector-label { color: #e2e8f0; }
+        .injector-glass {
+            width: 36px;
+            height: 58px;
+            border-radius: 10px 10px 6px 6px;
+            border: 2px solid rgba(148,163,184,0.55);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(15,23,42,0.85));
+            box-shadow:
+                inset 0 0 12px rgba(34,211,238,0.12),
+                0 0 0 1px rgba(15,23,42,0.8);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .injector-glass::before {
+            content: '';
+            position: absolute;
+            left: 4px; top: 6px; bottom: 6px;
+            width: 4px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.18);
+            z-index: 2;
+            pointer-events: none;
+        }
+        .injector-liquid {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            height: 0%;
+            transition: height 0.45s cubic-bezier(0.2, 0.9, 0.2, 1), background 0.3s ease, opacity 0.3s ease;
+            opacity: 0.92;
+            border-radius: 0 0 4px 4px;
+        }
+        .injector.filled .injector-liquid { height: 72%; }
+        .injector.draining .injector-liquid {
+            height: 0% !important;
+            transition: height 1.2s ease-in;
+        }
+        .injector-bubbles {
+            position: absolute; inset: 0; pointer-events: none; opacity: 0;
+        }
+        .injector.filled .injector-bubbles { opacity: 1; animation: bubble-rise 1.6s ease-in-out infinite; }
+        @keyframes bubble-rise {
+            0%, 100% { transform: translateY(4px); opacity: 0.35; }
+            50% { transform: translateY(-6px); opacity: 0.8; }
+        }
+        .injector-nozzle {
+            width: 10px; height: 14px;
+            background: linear-gradient(180deg, #64748b, #334155);
+            border-radius: 0 0 4px 4px;
+            margin-top: -1px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .pipe-lines {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+            height: 20px;
+            margin: 0 auto -4px;
+            position: relative;
+            z-index: 11;
+        }
+        .pipe {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .pipe::before {
+            content: '';
+            width: 4px;
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(180deg, #475569, #1e293b);
+        }
+        .pipe::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            margin-left: -2px;
+            width: 4px;
+            top: -100%;
+            height: 40%;
+            background: linear-gradient(180deg, transparent, var(--flow, #22d3ee), transparent);
+            opacity: 0;
+        }
+        .injector.filled + .pipe-sync .pipe,
+        .pipe.flowing::after {
+            opacity: 1;
+            animation: flow-down 0.9s linear infinite;
+        }
+        .pipe.flowing::after { opacity: 1; animation: flow-down 0.55s linear infinite; }
+        @keyframes flow-down {
+            from { top: -40%; }
+            to { top: 100%; }
+        }
+        .slot-box {
+            transition: none;
+            touch-action: manipulation;
+        }
+        .slot-box:active { transform: scale(0.94); opacity: 0.9; }
+        .mat-card {
+            transition: none;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+        }
+        .mat-card:active { transform: scale(0.94); opacity: 0.88; }
+        .fuse-btn-live {
+            background-size: 200% auto;
+            animation: fuse-sheen 2.8s linear infinite;
+            touch-action: manipulation;
+            transition: none;
+        }
+        @keyframes fuse-sheen {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+        .chamber-charging {
+            filter: drop-shadow(0 0 28px rgba(34,211,238,0.55)) drop-shadow(0 0 48px rgba(168,85,247,0.45));
+            transform: scale(1.04);
+        }
+        #fuse-btn:active:not(:disabled) { transform: scale(0.97); }
+
+        /* 実験室はスクロール禁止・1画面完結 */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        #app-shell {
+            height: 100dvh;
+            height: 100svh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-top: var(--safe-t);
+            padding-left: var(--safe-l);
+            padding-right: var(--safe-r);
+        }
+        #app-shell > main {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 8px 12px calc(8px + var(--safe-b));
+        }
+        #lab-view {
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #lab-view.hidden { display: none !important; }
+        #collection-view {
+            height: 100%;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+        .lab-panel {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .injector:active { transform: scale(0.96); opacity: 0.92; }
+        .injector.picking {
+            border-color: #22d3ee !important;
+            box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.35);
+            background: rgba(8, 47, 73, 0.75) !important;
+        }
+        .injector-hint {
+            font-size: 9px;
+            color: #64748b;
+            white-space: nowrap;
+            line-height: 1;
+        }
+        .injector.filled .injector-hint { color: #67e8f9; }
+
+        /* 元素選択オーバーレイ（下から出るシート） */
+        .mat-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+        }
+        .mat-overlay.open {
+            pointer-events: auto;
+            opacity: 1;
+            visibility: visible;
+        }
+        .mat-overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.75);
+            touch-action: manipulation;
+        }
+        .mat-overlay-sheet {
+            position: relative;
+            width: 100%;
+            max-width: 430px;
+            max-height: min(72dvh, 560px);
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            background: #0b1220;
+            border: 1px solid #334155;
+            border-bottom: none;
+            border-radius: 22px 22px 0 0;
+            padding: 12px 14px calc(16px + var(--safe-b));
+            box-shadow: 0 -16px 48px rgba(0,0,0,0.55);
+            transform: translateY(100%);
+            transition: transform 0.22s ease-out;
+        }
+        .mat-overlay.open .mat-overlay-sheet {
+            transform: translateY(0);
+        }
+        .mat-overlay-handle {
+            width: 40px;
+            height: 4px;
+            border-radius: 999px;
+            background: #475569;
+            margin: 0 auto 10px;
+        }
+        .mat-overlay-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .mat-overlay-grid .mat-card {
+            min-height: 76px;
+            min-width: 0;
+            padding: 8px 4px;
+            border-radius: 14px;
+            background: #020617;
+            border: 1px solid #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            touch-action: manipulation;
+        }
+        .mat-overlay-grid .mat-card .mat-name {
+            font-size: 10px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.2;
+            color: #e2e8f0;
+        }
+        .tab-btn {
+            touch-action: manipulation;
+            transition: none !important;
+        }
+        .tab-btn:active { opacity: 0.85; transform: scale(0.96); }
+        .fast-tap { touch-action: manipulation; }
+
+        @media (max-width: 640px) {
+            .injector { min-height: 108px; }
+            .injector-glass { width: 34px; height: 52px; }
+            .pipe-lines { height: 16px; }
+            #chamber-ring { width: 10.5rem !important; height: 10.5rem !important; }
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <div class="game-header">
-      <h1>酸アルバトルクイズ</h1>
-      <p>液体の性質を当ててみよう！</p>
+<body class="bg-slate-950 text-slate-100">
+<div id="app-shell">
+
+    <!-- ヘッダーエリア -->
+    <header class="border-b border-slate-800 bg-slate-900/90 shrink-0 z-30 px-3 py-2 flex justify-between items-center">
+        <div class="flex items-center space-x-2 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-fuchsia-500 flex items-center justify-center text-white shrink-0">
+                <i class="fa-solid fa-vial-virus"></i>
+            </div>
+            <div class="min-w-0">
+                <h1 class="text-base font-bold font-cinzel tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-indigo-300 truncate">GEM ALCHEMIST</h1>
+                <p class="text-[10px] text-slate-400">鉱物融合ラボ</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+            <button type="button" id="mute-btn" class="tab-btn w-9 h-9 rounded-lg border border-slate-700 text-sm" aria-label="ミュート切替" aria-pressed="false">🔊</button>
+            <nav class="flex bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/50">
+                <button type="button" id="tab-lab-btn" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-600 text-white shadow-md">
+                    実験室
+                </button>
+                <button type="button" id="tab-collection-btn" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 flex items-center gap-1">
+                    図鑑
+                    <span id="badge-count" class="bg-slate-900 text-cyan-300 text-[10px] px-1.5 py-0.5 rounded-full border border-cyan-500/30">0</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="w-full max-w-lg mx-auto">
+
+        <!-- ===== 実験室 View ===== -->
+        <section id="lab-view">
+            <div class="lab-panel rounded-2xl p-3 relative">
+                <canvas id="bg-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+
+                <div class="z-10 text-center mb-1 shrink-0">
+                    <div class="inline-flex items-center gap-1.5 text-[9px] font-semibold tracking-[0.18em] text-cyan-300 uppercase bg-cyan-950/50 px-2.5 py-0.5 rounded-full border border-cyan-700/40">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                        LAB ONLINE
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">注入管A〜Cをタップ → 元素を選ぶ</p>
+                </div>
+
+                <div class="z-10 relative flex flex-col items-center justify-center flex-1 min-h-0 w-full">
+                    <!-- 注入管 A/B/C（タップで元素オーバーレイ） -->
+                    <div class="injector-row">
+                        <button type="button" class="injector" id="injector-0" aria-label="注入管 A" onclick="openMaterialOverlay(0)">
+                            <div class="injector-label">注入管 A</div>
+                            <div class="injector-glass">
+                                <div class="injector-liquid" id="liquid-0"></div>
+                                <div class="injector-bubbles text-center text-[9px] text-white/80 pt-5" id="bubble-0"></div>
+                            </div>
+                            <div class="injector-nozzle"></div>
+                            <div class="injector-hint" id="hint-0">タップで注入</div>
+                        </button>
+                        <button type="button" class="injector" id="injector-1" aria-label="注入管 B" onclick="openMaterialOverlay(1)">
+                            <div class="injector-label">注入管 B</div>
+                            <div class="injector-glass">
+                                <div class="injector-liquid" id="liquid-1"></div>
+                                <div class="injector-bubbles text-center text-[9px] text-white/80 pt-5" id="bubble-1"></div>
+                            </div>
+                            <div class="injector-nozzle"></div>
+                            <div class="injector-hint" id="hint-1">タップで注入</div>
+                        </button>
+                        <button type="button" class="injector" id="injector-2" aria-label="注入管 C" onclick="openMaterialOverlay(2)">
+                            <div class="injector-label">注入管 C</div>
+                            <div class="injector-glass">
+                                <div class="injector-liquid" id="liquid-2"></div>
+                                <div class="injector-bubbles text-center text-[9px] text-white/80 pt-5" id="bubble-2"></div>
+                            </div>
+                            <div class="injector-nozzle"></div>
+                            <div class="injector-hint" id="hint-2">タップで注入</div>
+                        </button>
+                    </div>
+                    <div class="pipe-lines" aria-hidden="true">
+                        <div class="pipe" id="pipe-0" style="--flow:#a855f7"></div>
+                        <div class="pipe" id="pipe-1" style="--flow:#22d3ee"></div>
+                        <div class="pipe" id="pipe-2" style="--flow:#fbbf24"></div>
+                    </div>
+
+                    <div id="chamber-ring" class="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center transition-all duration-500 shrink-0">
+                        <svg class="absolute inset-0 w-full h-full drop-shadow-[0_0_20px_rgba(34,211,238,0.25)]" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="150" cy="150" r="135" stroke="#334155" stroke-width="4" stroke-dasharray="10 6" />
+                            <circle cx="150" cy="150" r="120" stroke="#475569" stroke-width="2" />
+                            <path d="M 70 55 L 110 105" stroke="#64748b" stroke-width="7" stroke-linecap="round"/>
+                            <path d="M 70 55 L 110 105" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="4 4" class="animate-pulse"/>
+                            <path d="M 150 40 L 150 100" stroke="#64748b" stroke-width="7" stroke-linecap="round"/>
+                            <path d="M 150 40 L 150 100" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="4 4" class="animate-pulse"/>
+                            <path d="M 230 55 L 190 105" stroke="#64748b" stroke-width="7" stroke-linecap="round"/>
+                            <path d="M 230 55 L 190 105" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="4 4" class="animate-pulse"/>
+                            <circle cx="150" cy="150" r="65" fill="url(#crucibleGrad)" stroke="#22d3ee" stroke-width="3" />
+                            <g class="plasma-effect opacity-70">
+                                <path d="M120 150 C120 120, 180 120, 180 150 C180 180, 120 180, 120 150 Z" fill="url(#plasmaGrad)" />
+                                <circle cx="135" cy="140" r="15" fill="#f43f5e" opacity="0.6" />
+                                <circle cx="165" cy="160" r="18" fill="#3b82f6" opacity="0.6" />
+                            </g>
+                            <circle cx="150" cy="150" r="65" fill="url(#glassShine)" opacity="0.4" />
+                            <circle cx="150" cy="150" r="70" stroke="#a855f7" stroke-width="2" stroke-dasharray="40 10" />
+                            <path d="M 90 150 A 60 60 0 0 1 210 150" stroke="#38bdf8" stroke-width="2" stroke-dasharray="2 6" fill="none" />
+                            <defs>
+                                <radialGradient id="crucibleGrad" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#0f2740" />
+                                    <stop offset="70%" stop-color="#0f172a" />
+                                    <stop offset="100%" stop-color="#020617" />
+                                </radialGradient>
+                                <radialGradient id="plasmaGrad" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" stop-color="#67e8f9" stop-opacity="0.9" />
+                                    <stop offset="50%" stop-color="#a855f7" stop-opacity="0.5" />
+                                    <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
+                                </radialGradient>
+                                <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5" />
+                                    <stop offset="30%" stop-color="#ffffff" stop-opacity="0.05" />
+                                    <stop offset="100%" stop-color="#000000" stop-opacity="0.3" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div id="chamber-status" class="absolute bottom-2 text-[10px] tracking-widest font-cinzel text-cyan-400/80">STANDBY</div>
+                    </div>
+
+                    <div class="flex items-center gap-3 mt-2 mb-2 shrink-0">
+                        <button type="button" id="clear-all-btn" class="fast-tap text-[11px] text-slate-400 px-2 py-1">クリア</button>
+                        <button type="button" id="autofill-btn" class="fast-tap text-[11px] text-cyan-400 px-2 py-1">おまかせ</button>
+                    </div>
+
+                    <button type="button" id="fuse-btn" class="fuse-btn-live w-full max-w-sm py-3.5 px-4 rounded-2xl font-bold font-cinzel text-base tracking-wider bg-gradient-to-r from-cyan-600 via-fuchsia-600 to-cyan-600 bg-[length:200%_auto] text-white shadow-xl shadow-cyan-900/40 disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-bolt text-yellow-300"></i>
+                        <span>FUSE / 融合実行</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 図鑑 View ===== -->
+        <section id="collection-view" class="hidden flex-col gap-4">
+            <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+                <div>
+                    <h2 class="text-lg font-bold font-cinzel text-slate-100">MINERAL COLLECTION</h2>
+                    <p class="text-[11px] text-slate-400 mt-0.5">全30種。元素の組み合わせで解明。</p>
+                    <p id="progress-text" class="text-xs text-cyan-400 font-cinzel mt-1">0 / 30 (0%)</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="rarity-filter" class="flex-1 bg-slate-950 border border-slate-700 text-slate-300 text-sm rounded-xl px-3 py-2 outline-none">
+                        <option value="all">すべてのレア度</option>
+                        <option value="★">★ (Common)</option>
+                        <option value="★★">★★ (Uncommon)</option>
+                        <option value="★★★">★★★ (Rare)</option>
+                        <option value="★★★★">★★★★ (Epic)</option>
+                        <option value="★★★★★">★★★★★ (Legendary)</option>
+                    </select>
+                    <button type="button" id="reset-btn" class="fast-tap px-3 py-2 text-xs text-red-400 border border-red-900/50 rounded-xl">リセット</button>
+                </div>
+            </div>
+            <div id="collection-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-4">
+            </div>
+        </section>
+
+    </main>
+</div>
+
+    <!-- 元素選択オーバーレイ -->
+    <div id="material-overlay" class="mat-overlay" aria-hidden="true">
+        <div class="mat-overlay-backdrop" id="mat-overlay-backdrop" onclick="closeMaterialOverlay()"></div>
+        <div class="mat-overlay-sheet" role="dialog" aria-modal="true" aria-labelledby="mat-overlay-title">
+            <div class="mat-overlay-handle" aria-hidden="true"></div>
+            <div class="flex items-center justify-between mb-3 gap-2">
+                <div class="min-w-0">
+                    <p class="text-[10px] tracking-wide text-cyan-400 font-bold">実在元素・物理条件</p>
+                    <h3 id="mat-overlay-title" class="text-base font-bold text-white">注入管 A に注入</h3>
+                </div>
+                <button type="button" id="mat-overlay-close" class="fast-tap shrink-0 text-slate-300 text-sm px-3 py-2 rounded-lg border border-slate-700" onclick="closeMaterialOverlay()">閉じる</button>
+            </div>
+            <div id="materials-grid" class="mat-overlay-grid"></div>
+            <button type="button" id="mat-overlay-clear" class="fast-tap mt-3 w-full py-3 rounded-xl border border-slate-600 text-slate-200 text-sm font-medium" onclick="clearPickingSlot()">
+                この注入管を空にする
+            </button>
+        </div>
     </div>
 
-    <div id="startScreen" class="screen">
-      <div class="character">
-        <p class="character-face">👋</p>
-      </div>
-      <p>酸性、中性、アルカリ性の性質を当てて、<br>博士を目指そう！</p>
-      <button id="startButton" class="start-button">ゲームスタート！</button>
+    <!-- ===== 結果モーダル ===== -->
+    <div id="result-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-500">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+            <div class="ray-bg w-[800px] h-[800px] bg-[conic-gradient(from_0deg,transparent_0_15deg,rgba(168,85,247,0.15)_15deg_30deg)] rounded-full"></div>
+        </div>
+
+        <div class="relative bg-slate-900/90 border border-purple-500/40 rounded-3xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full text-center shadow-2xl shadow-purple-950 transform scale-95 transition-all duration-300 flex flex-col items-center">
+            
+            <div id="modal-badge" class="mb-2 px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs rounded-full uppercase tracking-widest shadow-md">
+                NEW DISCOVERY!
+            </div>
+
+            <h3 class="text-xs text-purple-300 font-cinzel font-semibold tracking-wider">SYNTHESIS SUCCESSFUL</h3>
+            
+            <!-- SVG鉱物描画コンテナ -->
+            <div id="modal-icon-container" class="my-6 w-40 h-40 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-950 border border-slate-700 flex items-center justify-center relative glow-animation p-2">
+                <!-- SVGが挿入されます -->
+            </div>
+
+            <div id="modal-rarity" class="text-amber-400 text-sm mb-1">★★★★</div>
+            <h2 id="modal-name" class="text-2xl font-bold font-cinzel text-white mb-2">鉱物名</h2>
+            <p id="modal-desc" class="text-xs text-slate-300 leading-relaxed bg-slate-950/50 p-3 rounded-xl border border-slate-800 mb-6 max-h-28 overflow-y-auto">
+                説明文
+            </p>
+
+            <button onclick="closeResultModal()" class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition-all">
+                コレクションに格納
+            </button>
+        </div>
     </div>
 
-    <div id="gameScreen" class="screen hidden">
-      <div class="score-area">
-        <p class="question-number">第<span id="questionNum">1</span>問</p>
-        <p class="score">スコア: <span id="score">0</span></p>
-      </div>
+    <!-- ===== 詳細閲覧モーダル ===== -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="relative bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl">
+            <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
 
-      <div class="character">
-        <p id="characterFace" class="character-face">🤔</p>
-      </div>
+            <div class="flex items-center gap-4 mb-4">
+                <div id="detail-icon-box" class="w-24 h-24 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center p-2 shrink-0">
+                    <!-- SVG -->
+                </div>
+                <div>
+                    <span id="detail-number" class="text-xs text-purple-400 font-cinzel font-bold">No. 01</span>
+                    <h3 id="detail-name" class="text-xl font-bold font-cinzel text-white">鉱物名</h3>
+                    <div id="detail-rarity" class="text-amber-400 text-xs mt-0.5">★★★</div>
+                </div>
+            </div>
 
-      <div class="question-area">
-        <h2>これは何性でしょう？</h2>
-        <p id="questionText"></p>
-      </div>
-      
-      <div class="button-area">
-        <button class="choice-button acid-button" data-answer="酸性">1. 酸性</button>
-        <button class="choice-button neutral-button" data-answer="中性">2. 中性</button>
-        <button class="choice-button alkali-button" data-answer="アルカリ性">3. アルカリ性</button>
-      </div>
+            <p id="detail-desc" class="text-sm text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 mb-4">
+                説明文
+            </p>
 
-      <div id="feedback" class="feedback hidden">
-        <p id="feedbackText"></p>
-      </div>
+            <div class="bg-slate-950/40 p-3 rounded-xl border border-slate-800/60">
+                <span class="text-xs text-slate-400 block mb-1"><i class="fa-solid fa-flask text-purple-400 mr-1"></i> 合成元素・条件:</span>
+                <span id="detail-recipe" class="text-xs text-purple-300 font-mono">???? + ????</span>
+            </div>
+        </div>
     </div>
 
-    <div id="resultScreen" class="screen hidden">
-      <h2 id="resultTitle"></h2>
-      <div class="character">
-        <p id="resultCharacter" class="character-face"></p>
-      </div>
-      <div class="result-score">
-        <p>あなたのスコア: <span id="finalScore">0</span> / 10 問</p>
-        <p id="resultMessage"></p>
-      </div>
-      <button id="restartButton" class="start-button">もう一度遊ぶ</button>
-    </div>
-  </div>
 
-  <script src="script.js"></script>
+    <script>
+        /* ====================================================================
+           1. 実在元素・物理条件＆鉱物データベース (30種全網羅)
+           ==================================================================== */
+
+        const MATERIALS = [
+            { id: 'carbon', name: '炭素 (C)', symbol: 'C', color: '#334155', desc: 'ダイヤモンドや生命の基本構造' },
+            { id: 'silicon', name: '珪素 (Si)', symbol: 'Si', color: '#64748b', desc: 'ケイ酸塩鉱物・石英（水晶）の骨組み' },
+            { id: 'aluminum', name: 'アルミニウム (Al)', symbol: 'Al', color: '#94a3b8', desc: 'コランダムやトパーズ等の軽金属' },
+            { id: 'oxygen', name: '酸素 (O)', symbol: 'O', color: '#38bdf8', desc: '元素と結合して酸化物を構成' },
+            { id: 'iron', name: '鉄 (Fe)', symbol: 'Fe', color: '#78350f', desc: '発色作用や金属鉱物を形成' },
+            { id: 'chrom-tit', name: 'クロム/チタン (Cr/Ti)', symbol: 'Cr/Ti', color: '#e11d48', desc: '赤（クロム）や青（チタン）を呈色' },
+            { id: 'calcium-mg', name: 'カルシウム/マグ (Ca/Mg)', symbol: 'Ca/Mg', color: '#10b981', desc: '各種天然鉱物を安定化' },
+            { id: 'heat-press', name: '超高熱・高圧 (P/T)', symbol: 'P/T', color: '#eab308', desc: '地殻深部の物理エネルギー' }
+        ];
+
+        const MINERALS = [
+            { id: 'm1', name: 'ルビー', rarity: '★★★', formula: 'Al₂O₃:Cr', desc: '酸化アルミニウム(Al₂O₃)に微量のクロム(Cr)が混入し、鮮やかな深紅色に結晶したコランダム。', recipeHint: 'アルミニウム + 酸素 + クロム/チタン' },
+            { id: 'm2', name: 'サファイア', rarity: '★★★', formula: 'Al₂O₃:Fe,Ti', desc: '酸化アルミニウムに鉄(Fe)とチタン(Ti)が微量混入し、深いコバルトブルーとなったコランダム。', recipeHint: 'アルミニウム + 酸素 + 鉄' },
+            { id: 'm3', name: 'エメラルド', rarity: '★★★', formula: 'Be₃Al₂(SiO₃)₆:Cr', desc: 'ケイ酸塩結晶(ベリル)にクロムが含まれ、深いエメラルドグリーンに発色した宝石。', recipeHint: '珪素 + 酸素 + クロム/チタン' },
+            { id: 'm4', name: 'トパーズ', rarity: '★★', formula: 'Al₂SiO₄(F,OH)₂', desc: 'アルミニウムと珪素のケイ酸塩鉱物。透明感のある澄んだ黄金色〜黄色の輝きを持つ。', recipeHint: 'アルミニウム + 珪素 + 酸素' },
+            { id: 'm5', name: 'アメジスト (紫水晶)', rarity: '★★', formula: 'SiO₂:Fe³⁺', desc: '石英(SiO₂)に微量の鉄イオンが含まれ、天然放射線を受けて紫色に変色した水晶。', recipeHint: '珪素 + 酸素 + 鉄' },
+            { id: 'm6', name: 'アクアマリン', rarity: '★★', formula: 'Be₃Al₂Si₆O₁₈:Fe²⁺', desc: '緑柱石(ベリル)の一種で、微量の2価鉄イオンにより透明な海青色を呈する。', recipeHint: '珪素 + アルミニウム + 鉄' },
+            { id: 'm7', name: 'ダイヤモンド', rarity: '★★★★★', formula: 'C', desc: '単一の炭素(C)原子が地下深部の超高熱・高圧下で共有結合した最高硬度10の結晶。', recipeHint: '炭素 + 炭素 + 超高熱・高圧' },
+            { id: 'm8', name: 'ペリドット', rarity: '★', formula: '(Mg,Fe)₂SiO₄', desc: 'マグネシウムや鉄を含むケイ酸塩鉱物（かんらん石）。隕石中にも存在する宇宙の石。', recipeHint: '珪素 + カルシウム/マグ + 鉄' },
+            { id: 'm9', name: 'ガーネット (柘榴石)', rarity: '★', formula: 'X₃Y₂(SiO₄)₃', desc: 'ケイ酸塩とカルシウム・鉄などが複合結合したワインレッドの結晶体。', recipeHint: '珪素 + 酸素 + カルシウム/マグ' },
+            { id: 'm10', name: 'オパール (蛋白石)', rarity: '★★★★', formula: 'SiO₂·nH₂O', desc: '二酸化珪素と水分が非晶質状に固まり、光の干渉による虹色の「遊色効果」を生む。', recipeHint: '珪素 + 酸素 + 超高熱・高圧' },
+            { id: 'm11', name: 'ローズクォーツ', rarity: '★', formula: 'SiO₂:Ti/Al', desc: '石英(SiO₂)に微量のチタンがナノレベルで含まれ、ほんのり優しいピンク色になった結晶。', recipeHint: '珪素 + クロム/チタン + 超高熱・高圧' },
+            { id: 'm12', name: 'ラピスラズリ', rarity: '★★★', formula: 'Na₈(AlSiO₄)₆S', desc: 'ラズライトを中心に複数の鉱物が集積した濃青色の石。金色のパイライトが光る。', recipeHint: '珪素 + アルミニウム + カルシウム/マグ' },
+            { id: 'm13', name: '黒曜石 (オブシディアン)', rarity: '★', formula: 'SiO₂ (Glass)', desc: '珪酸を多く含むマグマが急速冷却されて固まった天然の漆黒ガラス質岩石。', recipeHint: '珪素 + 炭素 + 超高熱・高圧' },
+            { id: 'm14', name: '琥珀 (アンバー)', rarity: '★★', formula: 'C₁₀H₁₆O', desc: '数千万年前の樹木成分（炭化水素）が化石化した温かみのある蜜色の有機質結晶。', recipeHint: '炭素 + 酸素 + 超高熱・高圧' },
+            { id: 'm15', name: 'パイライト (黄鉄鉱)', rarity: '★', formula: 'FeS₂', desc: '鉄と硫黄からなる硫化鉱物。ギラギラとした金属光沢と綺麗な立方体結晶を作る。', recipeHint: '鉄 + 鉄 + 酸素' },
+            { id: 'm16', name: 'ターコイズ (トルコ石)', rarity: '★★', formula: 'CuAl₆(PO₄)₄(OH)₈', desc: '銅やアルミニウムを含む水和リン酸塩鉱物。独特のスカイブルーと褐色の網目模様。', recipeHint: 'アルミニウム + 鉄 + カルシウム/マグ' },
+            { id: 'm17', name: 'ムーンストーン', rarity: '★★★', formula: '(Na,K)AlSi₃O₈', desc: 'アルカリ長石。層状構造による光の拡散で、青白い月光のような「シラー効果」を放つ。', recipeHint: '珪素 + アルミニウム + 超高熱・高圧' },
+            { id: 'm18', name: 'サンストーン', rarity: '★★★', formula: 'Feldspar + Fe₂O₃', desc: '斜長石の中に赤銅やヘマタイト（鉄酸化物）の微小片が含まれ、太陽のように眩しく輝く。', recipeHint: 'アルミニウム + 鉄 + 超高熱・高圧' },
+            { id: 'm19', name: 'モルダバイト', rarity: '★★★★', formula: 'SiO₂ (Tektite)', desc: '隕石衝突時の高圧衝撃熱で地表の珪素が蒸発・凝固したオリーブグリーンの天然ガラス。', recipeHint: '珪素 + カルシウム/マグ + 超高熱・高圧' },
+            { id: 'm20', name: 'アレキサンドライト', rarity: '★★★★★', formula: 'BeAl₂O₄:Cr', desc: '絶妙な割合のクロムにより、日光下では青緑色、灯火下では赤紫色に変色する幻の宝石。', recipeHint: 'アルミニウム + クロム/チタン + 超高熱・高圧' },
+            { id: 'm21', name: 'フローライト (蛍石)', rarity: '★★', formula: 'CaF₂', desc: 'フッ化カルシウムの結晶。紫と緑のグラデーション構造を持ち、紫外線で蛍光発光する。', recipeHint: 'カルシウム/マグ + 酸素 + 超高熱・高圧' },
+            { id: 'm22', name: 'スモーキークォーツ', rarity: '★', formula: 'SiO₂:Al', desc: '水晶中の微量アルミニウムが天然放射線と反応し、ブラウン〜茶褐色に変色した結晶。', recipeHint: '珪素 + アルミニウム + 炭素' },
+            { id: 'm23', name: 'シトリン (黄水晶)', rarity: '★★', formula: 'SiO₂:Fe³⁺', desc: 'アメジストがマグマの地熱等で約450℃以上に加熱され、黄金色に変化した鉱物。', recipeHint: '珪素 + 鉄 + 超高熱・高圧' },
+            { id: 'm24', name: 'チャロアイト', rarity: '★★★★', formula: 'Silicate Complex', desc: 'ケイ酸塩にカルシウムやバナジウム等が緻密に結合した絹糸光沢の紫色マーブル石。', recipeHint: '珪素 + カルシウム/マグ + クロム/チタン' },
+            { id: 'm25', name: 'ジェダイト (翡翠)', rarity: '★★★', formula: 'NaAlSi₂O₆', desc: 'ナトリウムとアルミニウムを含む輝石が高圧下で緻密に集積した深緑色の東洋の宝石。', recipeHint: 'アルミニウム + カルシウム/マグ + 超高熱・高圧' },
+            { id: 'm26', name: 'ビスマス結晶', rarity: '★★★★', formula: 'Bi', desc: '熔融・徐冷した蒼鉛(Bi)。表面酸化膜の薄膜干渉により幾何学的な虹色階段構造をつくる。', recipeHint: '鉄 + クロム/チタン + 超高熱・高圧' },
+            { id: 'm27', name: 'フォスフォフィライト', rarity: '★★★★★', formula: 'Zn₂Fe(PO₄)₂·4H₂O', desc: '亜鉛と鉄の水和リン酸塩。繊細で儚いミントブルーを呈する極めて希少な宝石。', recipeHint: '鉄 + カルシウム/マグ + 超高熱・高圧' },
+            { id: 'm28', name: 'タイガーズアイ', rarity: '★', formula: 'SiO₂ + Fe', desc: 'クロシドライト繊維に石英が染み込み、酸化鉄で黄金〜褐色のキャッツアイ効果を生む。', recipeHint: '珪素 + 鉄 + 炭素' },
+            { id: 'm29', name: 'ロードクロサイト', rarity: '★★★', formula: 'MnCO₃', desc: 'マンガンと炭酸塩が結合した菱マンガン鉱。綺麗なバラ色の縞模様（インカローズ）を持つ。', recipeHint: '炭素 + 酸素 + 鉄' },
+            { id: 'm30', name: '水晶 (ロッククリスタル)', rarity: '★', formula: 'SiO₂', desc: '二酸化珪素(SiO₂)が結晶化した無色透明な代表的鉱物。美しい六角柱をつくる。', recipeHint: '珪素 + 酸素 + 酸素' }
+        ];
+
+        // 実質的な化学組み合わせキー -> 鉱物ID（キー重複禁止）
+        const RECIPES = {
+            'aluminum,chrom-tit,oxygen': 'm1',       // ルビー
+            'aluminum,iron,oxygen': 'm2',            // サファイア
+            'chrom-tit,oxygen,silicon': 'm3',        // エメラルド
+            'aluminum,oxygen,silicon': 'm4',         // トパーズ
+            'iron,oxygen,silicon': 'm5',             // アメジスト
+            'aluminum,iron,silicon': 'm6',           // アクアマリン
+            'carbon,heat-press': 'm7',               // ダイヤモンド
+            'carbon,carbon,heat-press': 'm7',
+            'calcium-mg,iron,silicon': 'm8',         // ペリドット
+            'calcium-mg,oxygen,silicon': 'm9',       // ガーネット
+            'heat-press,oxygen,silicon': 'm10',      // オパール
+            'chrom-tit,heat-press,silicon': 'm11',   // ローズクォーツ
+            'aluminum,calcium-mg,silicon': 'm12',    // ラピスラズリ
+            'carbon,heat-press,silicon': 'm13',      // 黒曜石
+            'carbon,heat-press,oxygen': 'm14',       // 琥珀
+            'iron,iron,oxygen': 'm15',               // パイライト
+            'aluminum,calcium-mg,iron': 'm16',       // ターコイズ
+            'aluminum,heat-press,silicon': 'm17',    // ムーンストーン
+            'aluminum,heat-press,iron': 'm18',       // サンストーン
+            'calcium-mg,heat-press,silicon': 'm19',  // モルダバイト
+            'aluminum,chrom-tit,heat-press': 'm20',  // アレキサンドライト
+            'calcium-mg,heat-press,oxygen': 'm21',   // フローライト
+            'aluminum,carbon,silicon': 'm22',        // スモーキークォーツ
+            'heat-press,iron,silicon': 'm23',        // シトリン
+            'calcium-mg,chrom-tit,silicon': 'm24',   // チャロアイト
+            'aluminum,calcium-mg,heat-press': 'm25', // 翡翠
+            'chrom-tit,heat-press,iron': 'm26',      // ビスマス
+            'calcium-mg,heat-press,iron': 'm27',     // フォスフォフィライト
+            'carbon,iron,silicon': 'm28',            // タイガーズアイ
+            'carbon,iron,oxygen': 'm29',             // ロードクロサイト
+            'oxygen,oxygen,silicon': 'm30'           // 水晶
+        };
+
+        const FAILED_MINERAL = {
+            id: 'fail',
+            name: '不純な岩くず',
+            rarity: '★',
+            formula: 'Slag/Rock',
+            desc: '元素の配合バランスが崩れ、結晶構造を作れなかった不純な雑石。'
+        };
+
+
+        /* ====================================================================
+           2. 鉱物ビジュアル（実写WebPがあれば優先、なければSVG）
+           ==================================================================== */
+
+        const MINERAL_IMAGES = {
+            m1: 'images/m1.webp',   // ルビー
+            m3: 'images/m3.webp',   // エメラルド
+            m4: 'images/m4.webp',   // トパーズ
+            m5: 'images/m5.webp',   // アメジスト
+            m6: 'images/m6.webp',   // アクアマリン
+            m7: 'images/m7.webp',   // ダイヤモンド
+            m8: 'images/m8.webp',   // ペリドット
+            m10: 'images/m10.webp', // オパール
+            m11: 'images/m11.webp', // ローズクォーツ
+            m12: 'images/m12.webp', // ラピスラズリ
+            m13: 'images/m13.webp', // 黒曜石
+            m14: 'images/m14.webp'  // 琥珀
+        };
+
+        function getMineralVisual(id, size = 100) {
+            const src = MINERAL_IMAGES[id];
+            if (src) {
+                return `<img src="${src}" alt="" width="${size}" height="${size}" class="mineral-photo" style="width:${size}px;height:${size}px" loading="lazy" decoding="async">`;
+            }
+            return getMineralSVG(id, size);
+        }
+
+        function getMineralSVG(id, size = 100) {
+            const uid = 'gem_' + id + '_' + Math.floor(Math.random()*10000);
+            
+            // 全鉱物のベクターSVGテンプレート定義
+            const svgMap = {
+                // ルビー (ブリリアントファセットカット)
+                m1: `
+                    <defs>
+                        <linearGradient id="${uid}_g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fda4af"/>
+                            <stop offset="40%" stop-color="#e11d48"/>
+                            <stop offset="100%" stop-color="#881337"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,12 82,32 82,68 50,88 18,68 18,32" fill="url(#${uid}_g1)" stroke="#ffe4e6" stroke-width="1.5"/>
+                    <polygon points="50,12 66,32 50,42 34,32" fill="#fecdd3" opacity="0.6"/>
+                    <polygon points="66,32 82,32 82,68 66,58" fill="#9f1239" opacity="0.5"/>
+                    <polygon points="34,32 18,32 18,68 34,58" fill="#fda4af" opacity="0.4"/>
+                    <polygon points="50,42 66,58 50,88 34,58" fill="#be123c"/>
+                `,
+                // サファイア (ブルーオーバルカット)
+                m2: `
+                    <defs>
+                        <radialGradient id="${uid}_g2" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#93c5fd"/>
+                            <stop offset="50%" stop-color="#2563eb"/>
+                            <stop offset="100%" stop-color="#1e3a8a"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="30" fill="url(#${uid}_g2)" stroke="#bfdbfe" stroke-width="1.5"/>
+                    <path d="M 30,30 Q 50,20 70,30 Q 80,50 70,70 Q 50,80 30,70 Q 20,50 30,30 Z" fill="none" stroke="#dbeafe" stroke-width="1" opacity="0.7"/>
+                    <polygon points="50,23 64,36 50,48 36,36" fill="#eff6ff" opacity="0.5"/>
+                `,
+                // エメラルド (スクエアエメラルドカット)
+                m3: `
+                    <defs>
+                        <linearGradient id="${uid}_g3" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6ee7b7"/>
+                            <stop offset="50%" stop-color="#059669"/>
+                            <stop offset="100%" stop-color="#064e3b"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="30,15 70,15 85,30 85,70 70,85 30,85 15,70 15,30" fill="url(#${uid}_g3)" stroke="#a7f3d0" stroke-width="1.5"/>
+                    <polygon points="36,25 64,25 73,34 73,66 64,75 36,75 27,66 27,34" fill="#34d399" opacity="0.6"/>
+                    <polygon points="40,32 60,32 60,68 40,68" fill="#ecfdf5" opacity="0.4"/>
+                `,
+                // トパーズ (黄金柱状カット)
+                m4: `
+                    <defs>
+                        <linearGradient id="${uid}_g4" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="50%" stop-color="#eab308"/>
+                            <stop offset="100%" stop-color="#854d0e"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 75,30 75,70 50,90 25,70 25,30" fill="url(#${uid}_g4)" stroke="#fef9c3" stroke-width="1.5"/>
+                    <polygon points="50,10 50,90 75,70 75,30" fill="#ca8a04" opacity="0.4"/>
+                    <polygon points="50,10 63,25 50,40 37,25" fill="#fef08a" opacity="0.8"/>
+                `,
+                // アメジスト (パープルクラスター)
+                m5: `
+                    <defs>
+                        <linearGradient id="${uid}_g5" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#e9d5ff"/>
+                            <stop offset="60%" stop-color="#9333ea"/>
+                            <stop offset="100%" stop-color="#4c1d95"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 50,12 L 68,35 L 58,85 L 42,85 L 32,35 Z" fill="url(#${uid}_g5)" stroke="#f3e8ff"/>
+                    <path d="M 28,35 L 42,48 L 36,88 L 18,75 Z" fill="#a855f7" opacity="0.8"/>
+                    <path d="M 72,35 L 82,75 L 64,88 L 58,48 Z" fill="#7e22ce" opacity="0.9"/>
+                    <polygon points="50,12 68,35 50,45 32,35" fill="#faf5ff" opacity="0.7"/>
+                `,
+                // アクアマリン (シアンプリズム)
+                m6: `
+                    <defs>
+                        <linearGradient id="${uid}_g6" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#a5f3fc"/>
+                            <stop offset="50%" stop-color="#0891b2"/>
+                            <stop offset="100%" stop-color="#164e63"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="32,15 68,15 82,30 82,70 68,85 32,85 18,70 18,30" fill="url(#${uid}_g6)" stroke="#cffafe" stroke-width="1.5"/>
+                    <line x1="32" y1="15" x2="32" y2="85" stroke="#ecfeff" stroke-width="1" opacity="0.6"/>
+                    <line x1="68" y1="15" x2="68" y2="85" stroke="#0891b2" stroke-width="1.5"/>
+                `,
+                // ダイヤモンド (ブリリアントカット＆輝き)
+                m7: `
+                    <defs>
+                        <linearGradient id="${uid}_g7" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="50%" stop-color="#e0f2fe"/>
+                            <stop offset="100%" stop-color="#38bdf8"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="20,32 80,32 50,88" fill="url(#${uid}_g7)" stroke="#f0f9ff" stroke-width="1.5"/>
+                    <polygon points="32,12 68,12 80,32 20,32" fill="#ffffff" stroke="#f0f9ff"/>
+                    <polygon points="32,12 42,32 20,32" fill="#bae6fd" opacity="0.6"/>
+                    <polygon points="68,12 58,32 80,32" fill="#7dd3fc" opacity="0.6"/>
+                    <polygon points="42,32 58,32 50,88" fill="#e0f2fe" opacity="0.8"/>
+                    <!-- 輝きライン -->
+                    <line x1="50" y1="2" x2="50" y2="98" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="2" y1="50" x2="98" y2="50" stroke="#ffffff" stroke-width="1.5" opacity="0.8"/>
+                `,
+                // ペリドット (オリビンライムグリーン)
+                m8: `
+                    <defs>
+                        <radialGradient id="${uid}_g8" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#bef264"/>
+                            <stop offset="60%" stop-color="#65a30d"/>
+                            <stop offset="100%" stop-color="#365314"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="50,15 80,35 70,82 30,82 20,35" fill="url(#${uid}_g8)" stroke="#ecfccb" stroke-width="1.5"/>
+                    <polygon points="50,15 62,38 50,55 38,38" fill="#f7fee7" opacity="0.6"/>
+                `,
+                // ガーネット (ワインレッド十二面体)
+                m9: `
+                    <defs>
+                        <radialGradient id="${uid}_g9" cx="30%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#f87171"/>
+                            <stop offset="50%" stop-color="#991b1b"/>
+                            <stop offset="100%" stop-color="#450a0a"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="50,12 78,28 88,58 68,85 32,85 12,58 22,28" fill="url(#${uid}_g9)" stroke="#fca5a5" stroke-width="1.2"/>
+                    <polygon points="50,12 62,38 50,60 38,38" fill="#fecaca" opacity="0.5"/>
+                `,
+                // オパール (虹色オーバル)
+                m10: `
+                    <defs>
+                        <linearGradient id="${uid}_g10" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f472b6"/>
+                            <stop offset="33%" stop-color="#38bdf8"/>
+                            <stop offset="66%" stop-color="#4ade80"/>
+                            <stop offset="100%" stop-color="#facc15"/>
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="38" ry="28" fill="url(#${uid}_g10)" stroke="#ffffff" stroke-width="2"/>
+                    <ellipse cx="42" cy="40" rx="20" ry="10" fill="#ffffff" opacity="0.5" transform="rotate(-15 42 40)"/>
+                `,
+                // ローズクォーツ (ピンク水晶)
+                m11: `
+                    <defs>
+                        <linearGradient id="${uid}_g11" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fbcfe8"/>
+                            <stop offset="60%" stop-color="#f472b6"/>
+                            <stop offset="100%" stop-color="#9d174d"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,12 78,32 70,85 30,85 22,32" fill="url(#${uid}_g11)" stroke="#fce7f3" stroke-width="1.5"/>
+                    <polygon points="50,12 62,32 50,50 38,32" fill="#fdf2f8" opacity="0.7"/>
+                `,
+                // ラピスラズリ (群青＋パイライト金粉)
+                m12: `
+                    <defs>
+                        <radialGradient id="${uid}_g12" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#3b82f6"/>
+                            <stop offset="60%" stop-color="#1d4ed8"/>
+                            <stop offset="100%" stop-color="#1e3a8a"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="28" fill="url(#${uid}_g12)" stroke="#93c5fd" stroke-width="1.5"/>
+                    <!-- 金粉スパングル -->
+                    <circle cx="38" cy="42" r="1.5" fill="#facc15"/>
+                    <circle cx="58" cy="36" r="2" fill="#facc15"/>
+                    <circle cx="48" cy="62" r="1.5" fill="#facc15"/>
+                    <circle cx="64" cy="58" r="1" fill="#facc15"/>
+                `,
+                // 黒曜石 (ガラス質シャード)
+                m13: `
+                    <defs>
+                        <linearGradient id="${uid}_g13" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#475569"/>
+                            <stop offset="40%" stop-color="#0f172a"/>
+                            <stop offset="100%" stop-color="#020617"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="45,10 82,25 75,85 28,90 12,45" fill="url(#${uid}_g13)" stroke="#94a3b8" stroke-width="1.2"/>
+                    <polygon points="45,10 52,48 28,90" fill="#64748b" opacity="0.4"/>
+                    <line x1="45" y1="10" x2="75" y2="85" stroke="#f8fafc" stroke-width="1" opacity="0.6"/>
+                `,
+                // 琥珀 (ハニーアンバー)
+                m14: `
+                    <defs>
+                        <radialGradient id="${uid}_g14" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="50%" stop-color="#f59e0b"/>
+                            <stop offset="100%" stop-color="#78350f"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M 50,15 C 75,15 85,35 80,65 C 75,88 30,88 20,65 C 15,35 25,15 50,15 Z" fill="url(#${uid}_g14)" stroke="#fef3c7" stroke-width="1.5"/>
+                    <circle cx="42" cy="55" r="4" fill="#451a03" opacity="0.5"/>
+                `,
+                // パイライト (黄金キューブクラスター)
+                m15: `
+                    <defs>
+                        <linearGradient id="${uid}_g15" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="50%" stop-color="#ca8a04"/>
+                            <stop offset="100%" stop-color="#713f12"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 30,30 L 60,18 L 82,35 L 52,50 Z" fill="#fef9c3"/>
+                    <path d="M 30,30 L 52,50 L 52,85 L 30,62 Z" fill="#eab308"/>
+                    <path d="M 52,50 L 82,35 L 82,68 L 52,85 Z" fill="#a16207"/>
+                `,
+                // ターコイズ (トルコ石＋黒ウェーブ)
+                m16: `
+                    <defs>
+                        <radialGradient id="${uid}_g16" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#67e8f9"/>
+                            <stop offset="60%" stop-color="#06b6d4"/>
+                            <stop offset="100%" stop-color="#164e63"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="28" fill="url(#${uid}_g16)" stroke="#cffafe" stroke-width="1.5"/>
+                    <path d="M 22,42 Q 38,50 48,35 Q 60,60 78,52" stroke="#162032" stroke-width="1.8" fill="none" opacity="0.7"/>
+                `,
+                // ムーンストーン (シラー効果)
+                m17: `
+                    <defs>
+                        <radialGradient id="${uid}_g17" cx="40%" cy="35%" r="65%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="50%" stop-color="#e0f2fe"/>
+                            <stop offset="85%" stop-color="#818cf8"/>
+                            <stop offset="100%" stop-color="#312e81"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="35" ry="28" fill="url(#${uid}_g17)" stroke="#eef2ff" stroke-width="1.5"/>
+                    <ellipse cx="45" cy="42" rx="18" ry="8" fill="#ffffff" opacity="0.7" transform="rotate(-20 45 42)"/>
+                `,
+                // サンストーン (陽光アベンチュレッセンス)
+                m18: `
+                    <defs>
+                        <radialGradient id="${uid}_g18" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#ffedd5"/>
+                            <stop offset="50%" stop-color="#f97316"/>
+                            <stop offset="100%" stop-color="#7c2d12"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="50,15 80,32 72,82 28,82 20,32" fill="url(#${uid}_g18)" stroke="#ffedd5" stroke-width="1.5"/>
+                    <circle cx="45" cy="45" r="2" fill="#fef08a"/>
+                    <circle cx="58" cy="38" r="1.5" fill="#fef08a"/>
+                    <circle cx="52" cy="62" r="2" fill="#fef08a"/>
+                `,
+                // モルダバイト (オリーブグリーンガラス)
+                m19: `
+                    <defs>
+                        <linearGradient id="${uid}_g19" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#a3e635"/>
+                            <stop offset="60%" stop-color="#4d7c0f"/>
+                            <stop offset="100%" stop-color="#1a2e05"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 40,12 L 75,22 L 88,55 L 62,88 L 22,78 L 15,42 Z" fill="url(#${uid}_g19)" stroke="#d9f99d" stroke-width="1.2"/>
+                `,
+                // アレキサンドライト (変色ツートンカット)
+                m20: `
+                    <defs>
+                        <linearGradient id="${uid}_g20" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#2dd4bf"/>
+                            <stop offset="50%" stop-color="#0f766e"/>
+                            <stop offset="51%" stop-color="#881337"/>
+                            <stop offset="100%" stop-color="#f43f5e"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,12 82,32 82,68 50,88 18,68 18,32" fill="url(#${uid}_g20)" stroke="#fecdd3" stroke-width="1.5"/>
+                    <polygon points="50,12 66,32 50,42 34,32" fill="#ccfbf1" opacity="0.6"/>
+                `,
+                // フローライト (バイカラー蛍石)
+                m21: `
+                    <defs>
+                        <linearGradient id="${uid}_g21" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#c084fc"/>
+                            <stop offset="50%" stop-color="#a855f7"/>
+                            <stop offset="51%" stop-color="#22c55e"/>
+                            <stop offset="100%" stop-color="#15803d"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="22" y="22" width="56" height="56" rx="4" fill="url(#${uid}_g21)" stroke="#f3e8ff" stroke-width="1.5" transform="rotate(15 50 50)"/>
+                `,
+                // スモーキークォーツ (煙水晶)
+                m22: `
+                    <defs>
+                        <linearGradient id="${uid}_g22" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#d97706"/>
+                            <stop offset="50%" stop-color="#78350f"/>
+                            <stop offset="100%" stop-color="#1c1917"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 75,30 75,70 50,90 25,70 25,30" fill="url(#${uid}_g22)" stroke="#fde68a" stroke-width="1.2"/>
+                    <polygon points="50,10 63,25 50,40 37,25" fill="#fef3c7" opacity="0.4"/>
+                `,
+                // シトリン (黄水晶)
+                m23: `
+                    <defs>
+                        <linearGradient id="${uid}_g23" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#fef08a"/>
+                            <stop offset="60%" stop-color="#eab308"/>
+                            <stop offset="100%" stop-color="#854d0e"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 75,30 75,70 50,90 25,70 25,30" fill="url(#${uid}_g23)" stroke="#fef9c3" stroke-width="1.5"/>
+                    <polygon points="50,10 63,25 50,40 37,25" fill="#ffffff" opacity="0.7"/>
+                `,
+                // チャロアイト (紫マーブル)
+                m24: `
+                    <defs>
+                        <linearGradient id="${uid}_g24" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#c084fc"/>
+                            <stop offset="50%" stop-color="#7e22ce"/>
+                            <stop offset="100%" stop-color="#3b0764"/>
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="28" fill="url(#${uid}_g24)" stroke="#f3e8ff" stroke-width="1.5"/>
+                    <path d="M 20,40 C 40,20 60,70 80,50" stroke="#e9d5ff" stroke-width="3" fill="none" opacity="0.6"/>
+                `,
+                // ジェダイト (翡翠カボション)
+                m25: `
+                    <defs>
+                        <radialGradient id="${uid}_g25" cx="35%" cy="30%" r="70%">
+                            <stop offset="0%" stop-color="#86efac"/>
+                            <stop offset="60%" stop-color="#16a34a"/>
+                            <stop offset="100%" stop-color="#064e3b"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="28" fill="url(#${uid}_g25)" stroke="#dcfce7" stroke-width="1.5"/>
+                    <ellipse cx="42" cy="40" rx="18" ry="9" fill="#ffffff" opacity="0.4" transform="rotate(-15 42 40)"/>
+                `,
+                // ビスマス結晶 (幾何学ステップ・ピラミッド)
+                m26: `
+                    <defs>
+                        <linearGradient id="${uid}_g26" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f43f5e"/>
+                            <stop offset="25%" stop-color="#eab308"/>
+                            <stop offset="50%" stop-color="#22c55e"/>
+                            <stop offset="75%" stop-color="#06b6d4"/>
+                            <stop offset="100%" stop-color="#a855f7"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="15" y="15" width="70" height="70" fill="url(#${uid}_g26)" stroke="#ffffff" stroke-width="1"/>
+                    <rect x="25" y="25" width="50" height="50" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+                    <rect x="35" y="35" width="30" height="30" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+                    <rect x="43" y="43" width="14" height="14" fill="#ffffff"/>
+                `,
+                // フォスフォフィライト (ミントブルー結晶)
+                m27: `
+                    <defs>
+                        <linearGradient id="${uid}_g27" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#a7f3d0"/>
+                            <stop offset="60%" stop-color="#14b8a6"/>
+                            <stop offset="100%" stop-color="#134e4a"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 78,32 70,88 30,88 22,32" fill="url(#${uid}_g27)" stroke="#ccfbf1" stroke-width="1.5"/>
+                    <polygon points="50,10 62,32 50,50 38,32" fill="#f0fdf4" opacity="0.8"/>
+                `,
+                // タイガーズアイ (虎目石縦縞)
+                m28: `
+                    <defs>
+                        <linearGradient id="${uid}_g28" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#78350f"/>
+                            <stop offset="30%" stop-color="#f59e0b"/>
+                            <stop offset="50%" stop-color="#fef08a"/>
+                            <stop offset="70%" stop-color="#b45309"/>
+                            <stop offset="100%" stop-color="#451a03"/>
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="28" fill="url(#${uid}_g28)" stroke="#fef3c7" stroke-width="1.5"/>
+                `,
+                // ロードクロサイト (ローズピンクレース)
+                m29: `
+                    <defs>
+                        <radialGradient id="${uid}_g29" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#f43f5e"/>
+                            <stop offset="40%" stop-color="#fda4af"/>
+                            <stop offset="70%" stop-color="#e11d48"/>
+                            <stop offset="100%" stop-color="#ffffff"/>
+                        </radialGradient>
+                    </defs>
+                    <ellipse cx="50" cy="50" rx="36" ry="28" fill="url(#${uid}_g29)" stroke="#ffe4e6" stroke-width="1.5"/>
+                    <path d="M 20,50 C 35,35 65,65 80,50" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8"/>
+                `,
+                // 水晶 (無色透明ロッククリスタル)
+                m30: `
+                    <defs>
+                        <linearGradient id="${uid}_g30" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="50%" stop-color="#f8fafc"/>
+                            <stop offset="100%" stop-color="#cbd5e1"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,8 76,28 76,72 50,92 24,72 24,28" fill="url(#${uid}_g30)" stroke="#ffffff" stroke-width="2"/>
+                    <polygon points="50,8 63,28 50,42 37,28" fill="#ffffff" opacity="0.9"/>
+                    <line x1="50" y1="8" x2="50" y2="92" stroke="#e2e8f0" stroke-width="1.5"/>
+                `,
+                // 不純な岩くず (失敗作)
+                fail: `
+                    <path d="M 30,25 L 65,18 L 85,38 L 78,78 L 42,85 L 18,62 Z" fill="#475569" stroke="#94a3b8" stroke-width="1.5"/>
+                    <path d="M 30,25 L 48,52 L 18,62" fill="#334155"/>
+                    <path d="M 65,18 L 48,52 L 78,78" fill="#1e293b"/>
+                `
+            };
+
+            const content = svgMap[id] || svgMap['fail'];
+
+            return `
+                <svg width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-[0_0_12px_rgba(168,85,247,0.4)] transition-all duration-300">
+                    ${content}
+                </svg>
+            `;
+        }
+
+
+        /* ====================================================================
+           3. アプリケーション状態 & 永続化
+           ==================================================================== */
+        let selectedSlots = [null, null, null];
+        let discoveredSet = new Set();
+        let isSynthesizing = false;
+        let pickingSlot = null;
+
+        function loadProgress() {
+            // 図鑑はセッション限り。再読み込みで必ず0から
+            try {
+                localStorage.removeItem('gem_alchemist_discovered');
+            } catch (e) { /* ignore */ }
+            discoveredSet = new Set();
+            updateHeaderProgress();
+        }
+
+        function saveProgress() {
+            // 永続化しない（リロードでリセット）
+            updateHeaderProgress();
+        }
+
+
+        /* ====================================================================
+           4. UI ＆ ビュー制御
+           ==================================================================== */
+        
+        function switchTab(tab) {
+            const labView = document.getElementById('lab-view');
+            const colView = document.getElementById('collection-view');
+            const labBtn = document.getElementById('tab-lab-btn');
+            const colBtn = document.getElementById('tab-collection-btn');
+            const isLab = tab === 'lab';
+
+            // 遷移アニメなし・即時切替（iOS最速）
+            labView.classList.toggle('hidden', !isLab);
+            colView.classList.toggle('hidden', isLab);
+            if (isLab) {
+                colView.classList.remove('flex');
+                labBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-600 text-white shadow-md';
+                colBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 flex items-center gap-1';
+                requestAnimationFrame(resizeCanvas);
+            } else {
+                colView.classList.add('flex');
+                colBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-cyan-600 text-white shadow-md flex items-center gap-1';
+                labBtn.className = 'tab-btn px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400';
+                renderCollection();
+            }
+            closeMaterialOverlay();
+            if (navigator.vibrate) navigator.vibrate(8);
+        }
+
+        function updateHeaderProgress() {
+            const count = discoveredSet.size;
+            const total = MINERALS.length;
+            const percent = Math.round((count / total) * 100);
+            const progress = document.getElementById('progress-text');
+            if (progress) progress.textContent = `${count} / ${total} (${percent}%)`;
+            document.getElementById('badge-count').textContent = count;
+        }
+
+        function openMaterialOverlay(idx) {
+            if (isSynthesizing) return;
+            pickingSlot = idx;
+            const overlay = document.getElementById('material-overlay');
+            const title = document.getElementById('mat-overlay-title');
+            title.textContent = `注入管 ${String.fromCharCode(65 + idx)} に注入`;
+            overlay.classList.add('open');
+            overlay.setAttribute('aria-hidden', 'false');
+            [0, 1, 2].forEach(i => {
+                const el = document.getElementById(`injector-${i}`);
+                if (el) el.classList.toggle('picking', i === idx);
+            });
+            if (navigator.vibrate) navigator.vibrate(10);
+        }
+
+        function closeMaterialOverlay() {
+            const overlay = document.getElementById('material-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('open');
+            overlay.setAttribute('aria-hidden', 'true');
+            pickingSlot = null;
+            [0, 1, 2].forEach(i => {
+                const el = document.getElementById(`injector-${i}`);
+                if (el) el.classList.remove('picking');
+            });
+        }
+
+        function renderMaterials() {
+            const grid = document.getElementById('materials-grid');
+            grid.textContent = '';
+
+            MATERIALS.forEach(mat => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'mat-card';
+                btn.addEventListener('click', () => selectMaterial(mat));
+
+                const chip = document.createElement('div');
+                chip.className = 'w-8 h-8 rounded-full flex items-center justify-center font-bold font-cinzel text-xs text-white shadow';
+                chip.style.backgroundColor = mat.color;
+                chip.textContent = mat.symbol;
+                const name = document.createElement('div');
+                name.className = 'mat-name';
+                name.textContent = mat.name;
+                btn.appendChild(chip);
+                btn.appendChild(name);
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateSlotUI() {
+            const tubeColors = ['#a855f7', '#22d3ee', '#fbbf24'];
+            selectedSlots.forEach((mat, idx) => {
+                const injector = document.getElementById(`injector-${idx}`);
+                const liquid = document.getElementById(`liquid-${idx}`);
+                const bubble = document.getElementById(`bubble-${idx}`);
+                const pipe = document.getElementById(`pipe-${idx}`);
+                const hint = document.getElementById(`hint-${idx}`);
+
+                if (mat) {
+                    if (injector && liquid) {
+                        injector.classList.add('filled');
+                        injector.classList.remove('draining');
+                        liquid.style.background = `linear-gradient(180deg, ${mat.color}cc, ${mat.color})`;
+                        if (bubble) bubble.textContent = mat.symbol;
+                    }
+                    if (hint) hint.textContent = mat.name.split(' ')[0];
+                    if (pipe) pipe.classList.remove('flowing');
+                } else {
+                    if (injector && liquid) {
+                        injector.classList.remove('filled', 'draining');
+                        liquid.style.background = tubeColors[idx];
+                        liquid.style.height = '';
+                        if (bubble) bubble.textContent = '';
+                    }
+                    if (hint) hint.textContent = 'タップで注入';
+                    if (pipe) pipe.classList.remove('flowing');
+                }
+            });
+
+            const count = selectedSlots.filter(s => s !== null).length;
+            const fuseBtn = document.getElementById('fuse-btn');
+            fuseBtn.disabled = count < 2;
+            const status = document.getElementById('chamber-status');
+            if (status) status.textContent = count >= 2 ? 'READY' : 'STANDBY';
+        }
+
+        function selectMaterial(mat) {
+            const idx = pickingSlot !== null ? pickingSlot : selectedSlots.findIndex(s => s === null);
+            if (idx === -1 || idx === null) {
+                playSound('error');
+                return;
+            }
+            selectedSlots[idx] = mat;
+            playSound('select');
+            if (navigator.vibrate) navigator.vibrate(12);
+            updateSlotUI();
+            closeMaterialOverlay();
+        }
+
+        function clearSlot(idx) {
+            if (selectedSlots[idx]) {
+                selectedSlots[idx] = null;
+                playSound('clear');
+                updateSlotUI();
+            }
+        }
+
+        function clearPickingSlot() {
+            if (pickingSlot === null) return;
+            clearSlot(pickingSlot);
+            closeMaterialOverlay();
+        }
+
+        function clearAllSlots() {
+            selectedSlots = [null, null, null];
+            playSound('clear');
+            updateSlotUI();
+            closeMaterialOverlay();
+        }
+
+        function autoFillRandom() {
+            clearAllSlots();
+            const count = Math.random() > 0.5 ? 3 : 2;
+            for (let i = 0; i < count; i++) {
+                const randMat = MATERIALS[Math.floor(Math.random() * MATERIALS.length)];
+                selectedSlots[i] = randMat;
+            }
+            playSound('select');
+            updateSlotUI();
+        }
+
+        /** iOS向け：click即応（preventDefaultしない＝タップ取りこぼし防止） */
+        function bindFastTap(el, fn) {
+            if (!el || el.dataset.fastBound === '1') return;
+            el.dataset.fastBound = '1';
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                fn(e);
+            });
+        }
+
+        // file:// やインラインonclickからも呼べるよう公開
+        window.openMaterialOverlay = openMaterialOverlay;
+        window.closeMaterialOverlay = closeMaterialOverlay;
+        window.clearPickingSlot = clearPickingSlot;
+        window.switchTab = switchTab;
+        window.startSynthesis = startSynthesis;
+        window.clearAllSlots = clearAllSlots;
+        window.autoFillRandom = autoFillRandom;
+        window.resetGameData = resetGameData;
+        window.closeResultModal = closeResultModal;
+        window.closeDetailModal = closeDetailModal;
+
+
+        /* ====================================================================
+           5. 図鑑のSVGレンダリング
+           ==================================================================== */
+        function renderCollection() {
+            const grid = document.getElementById('collection-grid');
+            const filterValue = document.getElementById('rarity-filter').value;
+            grid.innerHTML = '';
+
+            MINERALS.forEach((min, idx) => {
+                if (filterValue !== 'all' && min.rarity !== filterValue) return;
+
+                const isDiscovered = discoveredSet.has(min.id);
+                const card = document.createElement('div');
+                
+                if (isDiscovered) {
+                    card.className = "bg-slate-900 border border-purple-500/40 rounded-2xl p-4 flex flex-col items-center justify-between cursor-pointer hover:border-purple-400 hover:shadow-lg hover:shadow-purple-950/50 transition-all duration-300 card-shine group relative";
+                    card.onclick = () => openDetailModal(min, idx + 1);
+
+                    card.innerHTML = `
+                        <div class="w-full flex justify-between items-center text-[10px] text-slate-500 font-cinzel mb-1">
+                            <span>No.${String(idx + 1).padStart(2, '0')}</span>
+                            <span class="text-amber-400">${min.rarity}</span>
+                        </div>
+                        <div class="my-2 transform group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
+                            ${getMineralVisual(min.id, 64)}
+                        </div>
+                        <div class="text-xs font-bold font-cinzel text-slate-100 text-center truncate w-full mt-1">${min.name}</div>
+                    `;
+                } else {
+                    card.className = "bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 flex flex-col items-center justify-between opacity-50 select-none";
+                    card.innerHTML = `
+                        <div class="w-full flex justify-between items-center text-[10px] text-slate-600 font-cinzel mb-1">
+                            <span>No.${String(idx + 1).padStart(2, '0')}</span>
+                            <span>${min.rarity}</span>
+                        </div>
+                        <div class="my-3 text-3xl text-slate-700 flex items-center justify-center h-[64px]"><i class="fa-solid fa-question"></i></div>
+                        <div class="text-xs font-medium text-slate-600 font-cinzel">??? 未解明</div>
+                    `;
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+
+        /* ====================================================================
+           6. 融合ロジック ＆ アニメーション演出
+           ==================================================================== */
+
+        function startSynthesis() {
+            if (isSynthesizing) return;
+            
+            const activeMats = selectedSlots.filter(s => s !== null);
+            if (activeMats.length < 2) return;
+
+            isSynthesizing = true;
+            const fuseBtn = document.getElementById('fuse-btn');
+            fuseBtn.disabled = true;
+
+            playSound('charge');
+            triggerChamberChargeEffect(true);
+
+            setTimeout(() => {
+                triggerChamberChargeEffect(false);
+                executeFusion(activeMats);
+                isSynthesizing = false;
+                fuseBtn.disabled = false;
+            }, 1800);
+        }
+
+        function executeFusion(mats) {
+            const sortedIds = mats.map(m => m.id).sort().join(',');
+            const resultId = RECIPES[sortedIds];
+
+            let resultMineral = MINERALS.find(m => m.id === resultId);
+            let isNew = false;
+
+            if (!resultMineral) {
+                resultMineral = FAILED_MINERAL;
+            } else {
+                if (!discoveredSet.has(resultMineral.id)) {
+                    discoveredSet.add(resultMineral.id);
+                    saveProgress();
+                    isNew = true;
+                }
+            }
+
+            spawnExplosionParticles();
+            // SEはここで1回だけ（モーダル側では鳴らさない＝二重防止）
+            if (resultMineral.id === 'fail') {
+                playSound('fail');
+            } else if (isNew) {
+                playSound('discovery');
+            } else {
+                playSound('success');
+            }
+
+            setTimeout(() => {
+                showResultModal(resultMineral, isNew);
+            }, 200);
+        }
+
+
+        /* ====================================================================
+           7. モーダル ＆ ポップアップ制御
+           ==================================================================== */
+        function showResultModal(mineral, isNew) {
+            const modal = document.getElementById('result-modal');
+            const badge = document.getElementById('modal-badge');
+            const iconContainer = document.getElementById('modal-icon-container');
+            const name = document.getElementById('modal-name');
+            const rarity = document.getElementById('modal-rarity');
+            const desc = document.getElementById('modal-desc');
+
+            if (isNew) {
+                badge.innerText = "NEW DISCOVERY!";
+                badge.className = "mb-2 px-3 py-1 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs rounded-full uppercase tracking-widest shadow-md animate-bounce";
+            } else if (mineral.id === 'fail') {
+                badge.innerText = "SYNTHESIS FAILED";
+                badge.className = "mb-2 px-3 py-1 bg-slate-800 text-slate-400 font-bold text-xs rounded-full uppercase tracking-widest";
+            } else {
+                badge.innerText = "ALREADY DISCOVERED";
+                badge.className = "mb-2 px-3 py-1 bg-indigo-900/80 text-indigo-300 font-bold text-xs rounded-full uppercase tracking-widest";
+            }
+
+            iconContainer.innerHTML = getMineralVisual(mineral.id, 120);
+            name.innerText = mineral.name;
+            rarity.innerText = `${mineral.rarity} [${mineral.formula}]`;
+            desc.innerText = mineral.desc;
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.children[1].classList.remove('scale-95');
+            modal.children[1].classList.add('scale-100');
+        }
+
+        function closeResultModal() {
+            const modal = document.getElementById('result-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.children[1].classList.remove('scale-100');
+            modal.children[1].classList.add('scale-95');
+            SoundBus.endDiscoveryTheme();
+            clearAllSlots();
+        }
+
+        function openDetailModal(min, number) {
+            const modal = document.getElementById('detail-modal');
+            document.getElementById('detail-icon-box').innerHTML = getMineralVisual(min.id, 80);
+            document.getElementById('detail-number').innerText = `No. ${String(number).padStart(2, '0')}`;
+            document.getElementById('detail-name').innerText = min.name;
+            document.getElementById('detail-rarity').innerText = `${min.rarity} [${min.formula}]`;
+            document.getElementById('detail-desc').innerText = min.desc;
+            document.getElementById('detail-recipe').innerText = min.recipeHint || '?? + ??';
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            playSound('select');
+        }
+
+        function closeDetailModal() {
+            const modal = document.getElementById('detail-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        function resetGameData() {
+            if (confirm('図鑑の発見データをすべてリセットしますか？')) {
+                discoveredSet.clear();
+                saveProgress();
+                renderCollection();
+                playSound('clear');
+            }
+        }
+
+
+        /* ====================================================================
+           8. Canvas パーティクル ＆ エフェクト
+           ==================================================================== */
+        
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            if (canvas.parentElement) {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor(x, y, color, speed, size) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * speed;
+                this.vy = (Math.random() - 0.5) * speed;
+                this.size = Math.random() * size + 1;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.02 + 0.008;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= this.decay;
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function triggerChamberChargeEffect(active) {
+            const ring = document.getElementById('chamber-ring');
+            const status = document.getElementById('chamber-status');
+            if (active) {
+                ring.classList.add('chamber-charging');
+                if (status) status.textContent = 'INJECTING…';
+                selectedSlots.forEach((mat, idx) => {
+                    if (!mat) return;
+                    const injector = document.getElementById(`injector-${idx}`);
+                    const pipe = document.getElementById(`pipe-${idx}`);
+                    if (injector) injector.classList.add('draining');
+                    if (pipe) pipe.classList.add('flowing');
+                });
+                const interval = setInterval(() => {
+                    if (!isSynthesizing) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    for (let i = 0; i < 4; i++) {
+                        particles.push(new Particle(centerX, centerY, '#67e8f9', 6, 4));
+                        particles.push(new Particle(centerX, centerY, '#c084fc', 5, 3));
+                    }
+                }, 50);
+            } else {
+                ring.classList.remove('chamber-charging');
+                if (status) status.textContent = 'SYNTHESIS';
+                [0, 1, 2].forEach(idx => {
+                    const pipe = document.getElementById(`pipe-${idx}`);
+                    if (pipe) pipe.classList.remove('flowing');
+                });
+            }
+        }
+
+        function spawnExplosionParticles() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const colors = ['#a855f7', '#ec4899', '#3b82f6', '#f59e0b', '#ffffff'];
+
+            for (let i = 0; i < 120; i++) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(centerX, centerY, color, 14, 5));
+            }
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw(ctx);
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animateCanvas);
+        }
+        animateCanvas();
+
+
+        /* ====================================================================
+           9. サウンド（BGM1本＋SEは種別ごとに1インスタンス＝二重再生防止）
+           ==================================================================== */
+        const MUTE_KEY = 'gem_alchemist_muted';
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+
+        const SoundBus = {
+            unlocked: false,
+            muted: localStorage.getItem(MUTE_KEY) === '1',
+            ctx: null,
+            bgm: null,
+            theme: null, // 発見時テーマ（ishi）— BGMと同時再生しない
+            se: {},
+            chargeOsc: null,
+            chargeGain: null,
+
+            init() {
+                this.bgm = new Audio('audio/field.m4a');
+                this.bgm.loop = true;
+                this.bgm.preload = 'auto';
+                this.bgm.volume = 0.32;
+
+                this.theme = new Audio('audio/ishi-moment.m4a');
+                this.theme.loop = false;
+                this.theme.preload = 'none';
+                this.theme.volume = 0.45;
+
+                this.se = {
+                    ok: new Audio('audio/seikai2.m4a'),
+                    ng: new Audio('audio/fuseikai2.m4a'),
+                    level: new Audio('audio/levelup.m4a')
+                };
+                Object.values(this.se).forEach((a) => {
+                    a.preload = 'auto';
+                    a.volume = 0.72;
+                });
+                this.syncMuteUi();
+            },
+
+            ensureCtx() {
+                if (!this.ctx) this.ctx = new AudioCtx();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                return this.ctx;
+            },
+
+            unlock() {
+                if (this.unlocked) {
+                    this.ensureCtx();
+                    return;
+                }
+                this.unlocked = true;
+                this.ensureCtx();
+                // iOS: 無音再生で解錠
+                const silent = this.bgm;
+                const prev = silent.volume;
+                silent.volume = 0;
+                const p = silent.play();
+                if (p && p.then) {
+                    p.then(() => {
+                        silent.pause();
+                        silent.currentTime = 0;
+                        silent.volume = prev;
+                        if (!this.muted) this.startBgm();
+                    }).catch(() => {
+                        silent.volume = prev;
+                    });
+                } else if (!this.muted) {
+                    silent.volume = prev;
+                    this.startBgm();
+                }
+            },
+
+            syncMuteUi() {
+                const btn = document.getElementById('mute-btn');
+                if (!btn) return;
+                btn.textContent = this.muted ? '🔇' : '🔊';
+                btn.setAttribute('aria-pressed', this.muted ? 'true' : 'false');
+            },
+
+            toggleMute() {
+                this.muted = !this.muted;
+                localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0');
+                this.syncMuteUi();
+                if (this.muted) {
+                    this.stopAll();
+                } else if (this.unlocked) {
+                    this.startBgm();
+                }
+            },
+
+            stopSeAll() {
+                Object.values(this.se).forEach((a) => {
+                    try {
+                        a.pause();
+                        a.currentTime = 0;
+                    } catch (e) { /* ignore */ }
+                });
+            },
+
+            stopTheme() {
+                if (!this.theme) return;
+                try {
+                    this.theme.pause();
+                    this.theme.currentTime = 0;
+                } catch (e) { /* ignore */ }
+            },
+
+            stopCharge() {
+                try {
+                    if (this.chargeOsc) {
+                        this.chargeOsc.stop();
+                        this.chargeOsc.disconnect();
+                    }
+                } catch (e) { /* ignore */ }
+                this.chargeOsc = null;
+                this.chargeGain = null;
+            },
+
+            stopAll() {
+                this.stopCharge();
+                this.stopSeAll();
+                this.stopTheme();
+                if (this.bgm) {
+                    try {
+                        this.bgm.pause();
+                    } catch (e) { /* ignore */ }
+                }
+            },
+
+            startBgm() {
+                if (!this.unlocked || this.muted || !this.bgm) return;
+                // テーマ再生中はBGMを重ねない
+                if (this.theme && !this.theme.paused && this.theme.currentTime > 0) return;
+                if (!this.bgm.paused) return;
+                this.bgm.play().catch(() => {});
+            },
+
+            pauseBgm() {
+                if (!this.bgm) return;
+                try { this.bgm.pause(); } catch (e) { /* ignore */ }
+            },
+
+            /** 同一SEの二重再生防止：止めてから頭出し再生 */
+            playSe(key) {
+                if (!this.unlocked || this.muted) return;
+                const a = this.se[key];
+                if (!a) return;
+                this.stopSeAll();
+                try {
+                    a.currentTime = 0;
+                    a.play().catch(() => {});
+                } catch (e) { /* ignore */ }
+            },
+
+            /** 新発見テーマ：BGM停止→ishiのみ（SEファンファーレと同時にしない） */
+            playDiscoveryTheme() {
+                if (!this.unlocked || this.muted) return;
+                this.stopCharge();
+                this.stopSeAll();
+                this.pauseBgm();
+                this.stopTheme();
+                try {
+                    this.theme.currentTime = 0;
+                    this.theme.play().catch(() => {
+                        // フォールバック：短いlevelup
+                        this.playSe('level');
+                        this.startBgm();
+                    });
+                } catch (e) {
+                    this.playSe('level');
+                    this.startBgm();
+                }
+            },
+
+            endDiscoveryTheme() {
+                this.stopTheme();
+                if (!this.muted && this.unlocked) this.startBgm();
+            },
+
+            beep(type) {
+                if (!this.unlocked || this.muted) return;
+                try {
+                    const ctx = this.ensureCtx();
+                    const now = ctx.currentTime;
+                    if (type === 'select') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.setValueAtTime(520, now);
+                        osc.frequency.exponentialRampToValueAtTime(880, now + 0.07);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                        osc.start(now);
+                        osc.stop(now + 0.08);
+                    } else if (type === 'clear') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.setValueAtTime(280, now);
+                        osc.frequency.linearRampToValueAtTime(140, now + 0.09);
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.09);
+                        osc.start(now);
+                        osc.stop(now + 0.1);
+                    } else if (type === 'charge') {
+                        this.stopCharge();
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.setValueAtTime(140, now);
+                        osc.frequency.exponentialRampToValueAtTime(720, now + 1.5);
+                        gain.gain.setValueAtTime(0.02, now);
+                        gain.gain.linearRampToValueAtTime(0.1, now + 1.5);
+                        osc.start(now);
+                        osc.stop(now + 1.55);
+                        this.chargeOsc = osc;
+                        this.chargeGain = gain;
+                    } else if (type === 'error') {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'square';
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.setValueAtTime(160, now);
+                        gain.gain.setValueAtTime(0.05, now);
+                        gain.gain.linearRampToValueAtTime(0.001, now + 0.12);
+                        osc.start(now);
+                        osc.stop(now + 0.12);
+                    }
+                } catch (e) { /* ignore */ }
+            }
+        };
+
+        function playSound(type) {
+            SoundBus.unlock();
+            if (type === 'select' || type === 'clear' || type === 'charge' || type === 'error') {
+                SoundBus.beep(type);
+                return;
+            }
+            if (type === 'fail') {
+                SoundBus.stopCharge();
+                SoundBus.playSe('ng');
+                return;
+            }
+            if (type === 'success') {
+                SoundBus.stopCharge();
+                SoundBus.playSe('ok');
+                return;
+            }
+            if (type === 'discovery') {
+                SoundBus.playDiscoveryTheme();
+                return;
+            }
+        }
+
+        function initAudio() {
+            SoundBus.unlock();
+        }
+
+
+        /* ====================================================================
+           10. 初期化処理
+           ==================================================================== */
+        window.onload = function() {
+            SoundBus.init();
+            renderMaterials();
+            updateSlotUI();
+            loadProgress();
+            resizeCanvas();
+
+            bindFastTap(document.getElementById('tab-lab-btn'), () => switchTab('lab'));
+            bindFastTap(document.getElementById('tab-collection-btn'), () => switchTab('collection'));
+            bindFastTap(document.getElementById('fuse-btn'), () => startSynthesis());
+            bindFastTap(document.getElementById('clear-all-btn'), () => clearAllSlots());
+            bindFastTap(document.getElementById('autofill-btn'), () => autoFillRandom());
+            bindFastTap(document.getElementById('reset-btn'), () => resetGameData());
+            bindFastTap(document.getElementById('mute-btn'), () => {
+                SoundBus.unlock();
+                SoundBus.toggleMute();
+            });
+
+            document.getElementById('rarity-filter').addEventListener('change', () => renderCollection());
+
+            // 最初のタップでBGM解錠
+            const unlockOnce = () => {
+                SoundBus.unlock();
+                document.removeEventListener('pointerdown', unlockOnce);
+            };
+            document.addEventListener('pointerdown', unlockOnce, { passive: true });
+        };
+
+        // iOS: ダブルタップズーム防止（スクロール領域は除外）
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                if (!e.target.closest('#collection-view, select, input, textarea, .mat-overlay-sheet, .injector, .mat-card, button')) {
+                    e.preventDefault();
+                }
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        document.addEventListener('gesturestart', (e) => e.preventDefault());
+        document.addEventListener('selectstart', (e) => {
+            if (!e.target.closest('input, textarea, select')) e.preventDefault();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                SoundBus.pauseBgm();
+                SoundBus.stopCharge();
+            } else if (SoundBus.unlocked && !SoundBus.muted) {
+                SoundBus.startBgm();
+            }
+        });
+
+    </script>
 </body>
 </html>
